@@ -12,24 +12,33 @@ if st.button("Exekutieren"):
         try:
             api_url = "https://aragon-backend-api.onrender.com/prompt/check"
             
-            # Timeout auf 50 Sekunden, falls Render aufwachen muss
             response = httpx.post(api_url, json={"prompt": prompt}, timeout=50.0)
             data = response.json()
             
-            # Status dynamisch einfärben
-            risk = data.get('risk_level', 'UNKNOWN').upper()
+            # Werte aus dem JSON holen
+            risk = str(data.get("risk_level", "UNKNOWN")).upper()
+            action = str(data.get("action", ""))
+            antwort_text = str(data.get("normalized_prompt", ""))
+            
+            # Status anzeigen (ohne verschachtelte Anführungszeichen)
             if risk == "HIGH":
-                st.error(f"Status: {risk} (BEDROHUNG ERKANNT)")
+                st.error("Status: " + risk + " (BEDROHUNG ERKANNT)")
             else:
-                st.success(f"Status: {risk} (SICHER)")
+                st.success("Status: " + risk + " (SICHER)")
                 
-            st.write(f"Aktion: {data.get('action')}")
-            st.info(f"Antwort: {data.get('normalized_p Buch-Ergebnisse anzeigen
+            st.write("Aktion: " + action)
+            st.info("Antwort: " + antwort_text)
+            
+            # Buch-Ergebnisse anzeigen
             books = data.get("books_found")
             if books:
                 st.markdown("### 📚 Bücher Gefunden:")
                 for book in books:
-                    st.write(f"**ID:** {book.get('id')} | **Titel:** {book.get('name')} | **Ring:** {book.get('ring')} | **Status:** {book.get('status')}")
+                    b_id = str(book.get("id", ""))
+                    b_name = str(book.get("name", ""))
+                    b_ring = str(book.get("ring", ""))
+                    b_status = str(book.get("status", ""))
+                    st.write("**ID:** " + b_id + " | **Titel:** " + b_name + " | **Ring:** " + b_ring + " | **Status:** " + b_status)
             elif "buch" in prompt.lower():
                 st.warning("Kein Buch in der Registry gefunden (prüfe Schreibweise oder ID).")
             
@@ -37,15 +46,16 @@ if st.button("Exekutieren"):
             worm = data.get("worm_ledger", {})
             if worm:
                 st.markdown("### 🔐 WORM-Ledger & Master Seal")
-                st.code(
-                    f"Node: {worm.get('node_id')}\n"
-                    f"SHA3-512: {worm.get('sha3_512')}\n"
-                    f"Master-Seal: {worm.get('master_seal')}", 
-                    language="json"
-                )
-                st.caption(f"Status: {worm.get('status')}")
+                node = str(worm.get("node_id", ""))
+                sha = str(worm.get("sha3_512", ""))
+                seal = str(worm.get("master_seal", ""))
+                status = str(worm.get("status", ""))
+                
+                ledger_text = "Node: " + node + "\nSHA3-512: " + sha + "\nMaster-Seal: " + seal
+                st.code(ledger_text, language="json")
+                st.caption("Status: " + status)
                 
         except Exception as e:
-            st.error(f"Matrix-Verbindung fehlgeschlagen: {e}")
+            st.error("Matrix-Verbindung fehlgeschlagen: " + str(e))
     else:
         st.warning("Bitte gib einen Prompt ein!")
