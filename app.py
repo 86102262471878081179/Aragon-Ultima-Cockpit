@@ -5,7 +5,7 @@ st.set_page_config(page_title="Aragon Ultima", layout="centered")
 st.title("👑 Aragon Ultima Cockpit")
 st.write("Operator-Modus aktiv. WORM-Ledger & 68 Bücher verbunden.")
 
-prompt = st.text_input("Operator-Prompt:", placeholder="Frage nach Buch 0001 oder Black King...")
+prompt = st.text_input("Operator-Prompt:", placeholder="Frage nach Buch 0002, Mettwurst oder Hades...")
 
 if st.button("Exekutieren"):
     if prompt:
@@ -25,16 +25,14 @@ if st.button("Exekutieren"):
             st.write(f"Aktion: {data.get('action')}")
             st.info(f"Antwort: {data.get('normalized_prompt')}")
             
-            # Buch-Ergebnis anzeigen
-            book = data.get("book_search_result")
-            if book:
-                st.markdown("### 📚 Buch-Gefunden")
-                st.write(f"**ID:** {book.get('id')}")
-                st.write(f"**Titel:** {book.get('name')}")
-                st.write(f"**Ring:** {book.get('ring')}")
-                st.write(f"**Status:** {book.get('status')}")
+            # Buch-Ergebnisse anzeigen (Liste)
+            books = data.get("books_found")
+            if books:
+                st.markdown("### 📚 Bücher Gefunden:")
+                for book in books:
+                    st.write(f"**ID:** {book.get('id')} | **Titel:** {book.get('name')} | **Ring:** {book.get('ring')} | **Status:** {book.get('status')}")
             elif "buch" in prompt.lower():
-                st.warning("Kein Buch in der Registry gefunden (nur Test-Bücher 0001, 0002, 0007, 0023, 0068 aktiv).")
+                st.warning("Kein Buch in der Registry gefunden (prüfe Schreibweise).")
             
             # WORM Ledger Daten ausgeben
             worm = data.get("worm_ledger", {})
