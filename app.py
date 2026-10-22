@@ -29,6 +29,14 @@ if st.button("Exekutieren"):
             st.write("Aktion: " + action)
             st.info("Antwort: " + antwort_text)
             
+            # ==========================================
+            # HIER IST DER NEUE KI-BLOCK (RAG)
+            # ==========================================
+            if data.get("ai_answer"):
+                st.markdown("### 🧠 KI-Antwort:")
+                st.success(data.get("ai_answer"))
+            # ==========================================
+            
             # Buch-Ergebnisse anzeigen
             books = data.get("books_found")
             if books:
