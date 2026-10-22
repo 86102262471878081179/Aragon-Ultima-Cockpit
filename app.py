@@ -5,13 +5,14 @@ st.set_page_config(page_title="Aragon Ultima", layout="centered")
 st.title("👑 Aragon Ultima Cockpit")
 st.write("Operator-Modus aktiv. WORM-Ledger & 68 Bücher verbunden.")
 
-prompt = st.text_input("Operator-Prompt:", placeholder="Frage nach Buch 0002, Mettwurst oder Hades...")
+prompt = st.text_input("Operator-Prompt:", placeholder="Frage nach Buch 0001, Mettwurst oder Hades...")
 
 if st.button("Exekutieren"):
     if prompt:
         try:
             api_url = "https://aragon-backend-api.onrender.com/prompt/check"
             
+            # Timeout auf 50 Sekunden, falls Render aufwachen muss
             response = httpx.post(api_url, json={"prompt": prompt}, timeout=50.0)
             data = response.json()
             
@@ -23,22 +24,26 @@ if st.button("Exekutieren"):
                 st.success(f"Status: {risk} (SICHER)")
                 
             st.write(f"Aktion: {data.get('action')}")
-            st.info(f"Antwort: {data.get('normalized_prompt')}")
-            
-            # Buch-Ergebnisse anzeigen (Liste)
+            st.info(f"Antwort: {data.get('normalized_p Buch-Ergebnisse anzeigen
             books = data.get("books_found")
             if books:
                 st.markdown("### 📚 Bücher Gefunden:")
                 for book in books:
                     st.write(f"**ID:** {book.get('id')} | **Titel:** {book.get('name')} | **Ring:** {book.get('ring')} | **Status:** {book.get('status')}")
             elif "buch" in prompt.lower():
-                st.warning("Kein Buch in der Registry gefunden (prüfe Schreibweise).")
+                st.warning("Kein Buch in der Registry gefunden (prüfe Schreibweise oder ID).")
             
             # WORM Ledger Daten ausgeben
             worm = data.get("worm_ledger", {})
             if worm:
                 st.markdown("### 🔐 WORM-Ledger & Master Seal")
-                st.code(f"Node: {worm.get('node_id')}\nSHA3-512: {worm.get('sha3_512')}\nMaster-Seal: {worm.get('master_seal')}", language="json")
+                st.code(
+                    f"Node: {worm.get('node_id')}\n"
+                    f"SHA3-512: {worm.get('sha3_512')}\n"
+                    f"Master-Seal: {worm.get('master_seal')}", 
+                    language="json"
+                )
+                st.caption(f"Status: {worm.get('status')}")
                 
         except Exception as e:
             st.error(f"Matrix-Verbindung fehlgeschlagen: {e}")
