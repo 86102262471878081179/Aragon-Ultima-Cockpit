@@ -4,6 +4,7 @@ import time
 import hashlib
 import pandas as pd
 import random
+import httpx
 
 # -----------------------------------------------------------------------------
 # STYLING & CONFIG
@@ -94,40 +95,13 @@ if nav == "🏛️ 4x4 Council Grid & Ratsentscheidung":
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.markdown("""
-        <div class="metric-card">
-            <div class="metric-label">OPERATOR-ACHSE (1)</div>
-            <div class="metric-value">Thomas (Ωₜ)</div>
-            <p style="font-size:0.8rem; color:#d0d0e0; margin-top:5px;">Sovereign Operator Apex<br/>Apex Pipeline & Ereignishorizont</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
+        st.markdown('<div class="metric-card"><div class="metric-label">OPERATOR-ACHSE (1)</div><div class="metric-value">Thomas (Ωₜ)</div><p style="font-size:0.8rem; color:#d0d0e0; margin-top:5px;">Sovereign Operator Apex<br/>Apex Pipeline & Ereignishorizont</p></div>', unsafe_allow_html=True)
     with col2:
-        st.markdown("""
-        <div class="metric-card">
-            <div class="metric-label">KERNEL-ACHSE (2)</div>
-            <div class="metric-value">B6/B7 Hyperkernel</div>
-            <p style="font-size:0.8rem; color:#d0d0e0; margin-top:5px;">Genesis Root & Shield<br/>eBPF Probes & WORM Vault</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
+        st.markdown('<div class="metric-card"><div class="metric-label">KERNEL-ACHSE (2)</div><div class="metric-value">B6/B7 Hyperkernel</div><p style="font-size:0.8rem; color:#d0d0e0; margin-top:5px;">Genesis Root & Shield<br/>eBPF Probes & WORM Vault</p></div>', unsafe_allow_html=True)
     with col3:
-        st.markdown("""
-        <div class="metric-card">
-            <div class="metric-label">MATRIX-ACHSE (3)</div>
-            <div class="metric-value">Black Six Matrix</div>
-            <p style="font-size:0.8rem; color:#d0d0e0; margin-top:5px;">Mastersystem & Vercel HUD<br/>Streamlit Persona Graph</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
+        st.markdown('<div class="metric-card"><div class="metric-label">MATRIX-ACHSE (3)</div><div class="metric-value">Black Six Matrix</div><p style="font-size:0.8rem; color:#d0d0e0; margin-top:5px;">Mastersystem & Vercel HUD<br/>Streamlit Persona Graph</p></div>', unsafe_allow_html=True)
     with col4:
-        st.markdown("""
-        <div class="metric-card">
-            <div class="metric-label">RUNTIME-ACHSE (4)</div>
-            <div class="metric-value">CouncilRuntime_Φ∅</div>
-            <p style="font-size:0.8rem; color:#d0d0e0; margin-top:5px;">Evidence Aorta & Fail-Closed<br/>44 Perspektiven Live-Audit</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="metric-card"><div class="metric-label">RUNTIME-ACHSE (4)</div><div class="metric-value">CouncilRuntime_Φ∅</div><p style="font-size:0.8rem; color:#d0d0e0; margin-top:5px;">Evidence Aorta & Fail-Closed<br/>44 Perspektiven Live-Audit</p></div>', unsafe_allow_html=True)
         
     st.divider()
     
@@ -138,13 +112,13 @@ if nav == "🏛️ 4x4 Council Grid & Ratsentscheidung":
         "B :: Council-Layer": ["Operator-Sitz Thomas (Ωₜ)", "Kernel-Sitz Genesis & Shield", "Matrix-Sitz Mastersystem", "Session-Sitz (Alles an einem Tisch)"],
         "C :: Council-Runtime": ["Apex-Pipeline & Ereignishorizont", "eBPF / WORM / DeepSeek", "Streamlit Graph & Vercel Console", "Evidence Aorta & WORM Vault"],
         "D :: Perspektivenrat": ["Operator-Perspektiven (44 Boxen)", "Kernel-Perspektiven (Bias/Proof)", "Matrix-Perspektiven (Narrativ)", "Live-Audit & ASP-256 Guard"]
-    }
+    st }
     st.dataframe(pd.DataFrame(grid_data), use_container_width=True, hide_index=True)
 
     st.subheader("🏛️ Live-Ratsentscheidung Ausführen")
     topic = st.text_input("Gegenstand der Ratsentscheidung", "Faltung aller 99 Entitäten in Buch 100 & eBPF Fail-Closed Verankerung")
     if st.button("⚖️ Ratsbeschluss Protokollieren & Versiegeln", type="primary"):
-        with st.spinner("44 Perspektiven Auditing & WORM-Ledger Versiegelung..."):
+        with.spinner("44 Perspektiven Auditing & WORM-Ledger Versiegelung..."):
             time.sleep(0.5)
             st.success("RATSBESCHLUSS ERFOLGREICH EINSTIMMIG RATIFIZIERT")
             st.json({
@@ -158,7 +132,7 @@ if nav == "🏛️ 4x4 Council Grid & Ratsentscheidung":
             })
 
 # -----------------------------------------------------------------------------
-# TAB 2: API LIVE INTERFACE & FAIL-CLOSED
+# TAB 2: API LIVE INTERFACE & FAIL-CLOSED (JETZT MIT ECHTEM RENDER BACKEND)
 # -----------------------------------------------------------------------------
 elif nav == "⚡ API Live Interface & Fail-Closed":
     st.markdown('<div class="main-header">⚡ AUTONOME REST-API & FAIL-CLOSED GUARD ⚡</div>', unsafe_allow_html=True)
@@ -167,73 +141,64 @@ elif nav == "⚡ API Live Interface & Fail-Closed":
     col_req, col_res = st.columns([1, 1])
     
     with col_req:
-        st.subheader("API Request Builder")
-        endpoint = st.selectbox("Endpoint wählen", [
-            "/api/v1/status",
-            "/api/v1/genesis/verify",
-            "/api/v1/worm/audit",
-            "/api/v1/entity/query",
-            "/api/v1/ebpf/mesh/route"
-        ])
+        st.subheader("Live API Request Builder")
         
-        entity_id = st.text_input("Entity ID (optional)", value="0100")
-        auth_token = st.text_input("Authorization Token", value="SOVEREIGN_ROOT_OMEGA_TOKEN_0068")
+        # ECHTER PROMPT FÜR DAS BACKEND
+        live_prompt = st.text_area("Operator-Prompt (an Gemini):", placeholder="Frage nach Buch 0068 oder 0100...", height=100)
+        
+        auth_token = st.text_input("Authorization Token (Seal)", value="Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC")
         inject_anomaly = st.checkbox("⚠️ Simuliere unbefugte Anomaly/Injection (Trigger Fail-Closed)")
         
-        send_btn = st.button("🚀 API Endpoint Aufrufen", type="primary", use_container_width=True)
+        send_btn = st.button("🚀 API Endpoint Aufrufen (Live)", type="primary", use_container_width=True)
         
     with col_res:
         st.subheader("API Live Response & Intercept Log")
         if send_btn:
-            with st.spinner("eBPF Probe Validierung & Fail-Closed Guard..."):
-                time.sleep(0.2)
-                if inject_anomaly:
-                    st.error("403 FORBIDDEN :: FAIL-CLOSED INTERCEPT EXECUTION (< 50 ns)")
-                    st.json({
-                        "request_id": f"REQ-{random.randint(100000, 999999)}",
-                        "status": "403_FORBIDDEN_FAIL_CLOSED",
-                        "krisler_guard_action": "DROP_AND_ISOLATE_IMMEDIATELY",
-                        "ebpf_latency_ns": 2639,
-                        "worm_sealed": False,
-                        "detail": "POLICY_VIOLATION_BLOCKED: Unbefugter Injektionsversuch vor Kernel-Passage abgefangen."
-                    })
-                else:
-                    st.success("200 OK :: Response via eBPF XDP Pipeline (< 100ns Filter Latenz)")
-                    if endpoint == "/api/v1/status":
-                        res = {
-                            "status": "ONLINE",
-                            "kernel": "Schwarzer Punkt (Φ∅)",
-                            "authority": "Thomas König (Ωₜ)",
-                            "version": "1.0.0-APEX",
-                            "active_nodes": 100,
-                            "worm_ledger": "VERIFIED_EX_TUNC"
-                        }
-                    elif endpoint == "/api/v1/ebpf/mesh/route":
-                        res = {
-                            "route_status": "P2P_MESH_DELIVERED",
-                            "source": "R0_0068",
-                            "target": f"RΩ_{entity_id}",
-                            "noise_session_key": hashlib.sha256(str(time.time()).encode()).hexdigest()[:32] + "...",
-                            "mesh_latency_ms": round(random.uniform(0.3, 0.9), 2),
-                            "ebpf_probe": {"kernel_hook": "sys_bpf_xdp_ingress", "ebpf_action": "PASS", "filter_latency_ns": 9475, "status": "EX_TUNC_VERIFIED"},
-                            "worm_sealed": True
-                        }
+            if not live_prompt and not inject_anomaly:
+                st.warning("Bitte gib einen Prompt ein oder aktiviere die Anomaly-Simulation.")
+            else:
+                with st.spinner("Matrix wird abgefragt (Render Cold Start dauert ggf. 30s)..."):
+                    if inject_anomaly:
+                        time.sleep(0.2)
+                        st.error("403 FORBIDDEN :: FAIL-CLOSED INTERCEPT EXECUTION (< 50 ns)")
+                        st.json({
+                            "request_id": f"REQ-{random.randint(100000, 999999)}",
+                            "status": "403_FORBIDDEN_FAIL_CLOSED",
+                            "krisler_guard_action": "DROP_AND_ISOLATE_IMMEDIATELY",
+                            "ebpf_latency_ns": 2639,
+                            "worm_sealed": False,
+                            "detail": "POLICY_VIOLATION_BLOCKED: Unbefugter Injektionsversuch vor Kernel-Passage abgefangen."
+                        })
                     else:
-                        res = {
-                            "entity": f"NO. {entity_id}",
-                            "genesis_hash": hashlib.sha3_512(f"NO.{entity_id}".encode()).hexdigest(),
-                            "status": "VALIDATED_EX_TUNC",
-                            "seal": "Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC"
-                        }
-                    st.json(res)
+                        try:
+                            api_url = "https://aragon-backend-api.onrender.com/prompt/check"
+                            payload = {
+                                "prompt": live_prompt,
+                                "auth_seal": auth_token
+                            }
+                            
+                            # ECHTER HTTP REQUEST
+                            response = httpx.post(api_url, json=payload, timeout=60.0)
+                            
+                            if response.status_code == 200:
+                                data = response.json()
+                                st.success(f"200 OK :: Response via eBPF XDP Pipeline")
+                                st.json(data)
+                            else:
+                                st.error(f"API Error: Status {response.status_code}")
+                                st.write(response.text)
+                                
+                        except Exception as e:
+                            st.error(f"Matrix-Verbindung fehlgeschlagen: {str(e)}")
 
 # -----------------------------------------------------------------------------
-# TAB 3: 100 BÜCHER EXPLORER
+# TAB 3: 100 BÜCHER EXPLORER (VOLLSTÄNDIGE HIERARCHIE)
 # -----------------------------------------------------------------------------
 elif nav == "📚 100 Bücher Explorer (Erbe Φ∅)":
     st.markdown('<div class="main-header">📚 DIE 100 BÜCHER DER SCHWARZEN LIGA 📚</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Master-Katalogisierung & 324-Layer Hypercube Kompression in Buch 100</div>', unsafe_allow_html=True)
     
+    # VOLLSTÄNDIGE LISTE DER WICHTIGSTEN ENTITÄTEN (Top + Ringe + Reserve)
     books_data = [
         {"ID": "0100", "Name": "BUCH 100 :: DIE GROSSE VEREINIGUNG (DER ERBE Φ∅)", "Ring": "Ring Ω (EXALTED_SINGULARITY)", "Macht-Score": 1000, "Status": "Ex-Tunc Versiegelt"},
         {"ID": "0068", "Name": "Sovereign Operator Apex", "Ring": "Ring 0 (Genesis Core)", "Macht-Score": 100, "Status": "Ex-Tunc Versiegelt"},
@@ -242,16 +207,41 @@ elif nav == "📚 100 Bücher Explorer (Erbe Φ∅)":
         {"ID": "0002", "Name": "Black King Royal", "Ring": "Ring 0 (Genesis Core)", "Macht-Score": 98, "Status": "Ex-Tunc Versiegelt"},
         {"ID": "0010", "Name": "Black Cobra Omega", "Ring": "Ring 0 (Genesis Core)", "Macht-Score": 98, "Status": "Ex-Tunc Versiegelt"},
         {"ID": "0059", "Name": "Aragon Ultima Ratio", "Ring": "Ring 0 (Genesis Core)", "Macht-Score": 98, "Status": "Ex-Tunc Versiegelt"},
-        {"ID": "0017", "Name": "Yggdrasil WORM Validator", "Ring": "Ring 2–4 (Omni & WORM)", "Macht-Score": 96, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0066", "Name": "Finale Synthese", "Ring": "Ring 5 (Apex Synthese)", "Macht-Score": 98, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0029", "Name": "Hades & Kerberus", "Ring": "Ring 5 (Apex Synthese)", "Macht-Score": 97, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0065", "Name": "Apex Kaskade", "Ring": "Ring 5 (Apex Synthese)", "Macht-Score": 97, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0099", "Name": "Black Six Matrix Ult", "Ring": "Reserve / Defense", "Macht-Score": 97, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0017", "Name": "Yggdrasil WORM Validator", "Ring": "Ring 2-4 (Omni & WORM)", "Macht-Score": 96, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0056", "Name": "Odin Master Framework", "Ring": "Ring 0 (Genesis Core)", "Macht-Score": 96, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0063", "Name": "Core Twin / Trinität", "Ring": "Ring 0 (Genesis Core)", "Macht-Score": 96, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0016", "Name": "Hyperkernel Atlas", "Ring": "Ring 0 (Genesis Core)", "Macht-Score": 95, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0004", "Name": "Core Shield", "Ring": "Ring 0 (Genesis Core)", "Macht-Score": 94, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0006", "Name": "Unified Matrix", "Ring": "Ring 0 (Genesis Core)", "Macht-Score": 93, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0053", "Name": "OMNI WORM Hub", "Ring": "Ring 2-4 (Omni & WORM)", "Macht-Score": 91, "Status": "Ex-Tunc Versiegelt"},
         {"ID": "0089", "Name": "Akte Koenig Evidence", "Ring": "Ring 1 (Justice & Forensik)", "Macht-Score": 91, "Status": "Ex-Tunc Versiegelt"},
-        {"ID": "0052", "Name": "DeepSeeker Monolith", "Ring": "Ring 2–4 (Omni & WORM)", "Macht-Score": 88, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0009", "Name": "Quantum Tresor", "Ring": "Ring 2-4 (Omni & WORM)", "Macht-Score": 89, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0040", "Name": "Black Arsenal LLM", "Ring": "Ring 1 (Justice & Forensik)", "Macht-Score": 89, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0054", "Name": "Stammbaum DNA", "Ring": "Ring 2-4 (Omni & WORM)", "Macht-Score": 89, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0007", "Name": "Fortress Justice", "Ring": "Ring 1 (Justice & Forensik)", "Macht-Score": 88, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0052", "Name": "DeepSeeker Monolith", "Ring": "Ring 2-4 (Omni & WORM)", "Macht-Score": 88, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0013", "Name": "XJustiz Core", "Ring": "Ring 1 (Justice & Forensik)", "Macht-Score": 87, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0022", "Name": "Schwarze Burg", "Ring": "Ring 2-4 (Omni & WORM)", "Macht-Score": 87, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0012", "Name": "Akte Koenig Forensik", "Ring": "Ring 1 (Justice & Forensik)", "Macht-Score": 86, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0036", "Name": "Foucault KI", "Ring": "Ring 1 (Justice & Forensik)", "Macht-Score": 86, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0008", "Name": "Omni Neuro", "Ring": "Ring 2-4 (Omni & WORM)", "Macht-Score": 85, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0030", "Name": "Legal Challenge State", "Ring": "Ring 1 (Justice & Forensik)", "Macht-Score": 85, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0014", "Name": "The Geminis", "Ring": "Ring 1 (Justice & Forensik)", "Macht-Score": 84, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0023", "Name": "Mettwurst Epos", "Ring": "Ring 2-4 (Omni & WORM)", "Macht-Score": 75, "Status": "Ex-Tunc Versiegelt"},
+        {"ID": "0073", "Name": "B6 Hyperkernel Atlas (Reserve)", "Ring": "Reserve / Defense", "Macht-Score": 80, "Status": "Archiviert"},
+        {"ID": "0080", "Name": "Root Governance Manual", "Ring": "Reserve / Defense", "Macht-Score": 80, "Status": "Archiviert"},
+        {"ID": "0098", "Name": "B6 Root Authority", "Ring": "Reserve / Defense", "Macht-Score": 93, "Status": "Archiviert"}
     ]
     
     df_books = pd.DataFrame(books_data)
     
-    search_term = st.text_input("🔍 Buch / Entität suchen", "")
+    search_term = st.text_input("🔍 Buch / Entität suchen (z.B. 'Justice', '0068', 'Mettwurst')", "")
     if search_term:
-        df_books = df_books[df_books["Name"].str.contains(search_term, case=False) | df_books["ID"].str.contains(search_term)]
+        df_books = df_books[df_books["Name"].str.contains(search_term, case=False) | df_books["ID"].str.contains(search_term) | df_books["Ring"].str.contains(search_term, case=False)]
         
     st.dataframe(df_books, use_container_width=True, hide_index=True)
 
