@@ -197,18 +197,12 @@ elif nav == "🔒 WORM Ledger Audit":
     st.markdown('<div class="main-header">🔒 WORM LEDGER AUDIT 🔒</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Post-Quantum Clean State & Master Seal Verification</div>', unsafe_allow_html=True)
     
-    # Das Clean State Zertifikat (Visuell hervorgehoben)
     st.success("✅ SYSTEM STATUS: CLEAN (100% PURITY_SCORE)")
     
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("### 📊 Forensischer Befund")
-        st.info("""
-        **Purity Score:** 100%
-        **Anomalies:** ZERO
-        **Void Links:** ZERO
-        **Hypercube:** PERFECT (4x81 Layer Fold)
-        """)
+        st.info("**Purity Score:** 100%\n\n**Anomalies:** ZERO\n\n**Void Links:** ZERO\n\n**Hypercube:** PERFECT (4x81 Layer Fold)")
         
     with col2:
         st.markdown("### 🛡️ Versiegelung")
@@ -222,10 +216,8 @@ elif nav == "🔒 WORM Ledger Audit":
         """, unsafe_allow_html=True)
 
     st.divider()
-    
     st.subheader("🕵️‍♂️ Deep-Clean Audit Log")
-    st.code("""
-[PURITY_SCORE]
+    st.code("""[PURITY_SCORE]
 100% – Sämtliche 101 Geburtsurkunden (NO. 0000 bis NO. 0100) sowie die Kern-Register sind im YGGDRASIL WORM-Ledger isoliert. Rauschabstand und Entropie befinden sich auf dem Soll-Minimum.
 
 [REMAINING_ANOMALIES]
@@ -238,19 +230,14 @@ ZERO
 PERFECT
 
 [FINAL_VERDICT]
-CLEAN
-    """, language="markdown")
-
-# Footer
-st.divider()
-st.caption("YGGDRASIL_OS v2.0 :: Developed by Sovereign Root Thomas König & Schwarze Liga Council 💀⚫️💀")
+CLEAN""", language="markdown")
 
 # -----------------------------------------------------------------------------
 # TAB 6: ARCHITEKTUR MATRIX (DIE MERMAID BLÖCKE)
 # -----------------------------------------------------------------------------
 elif nav == "🧬 Architektur-Matrix":
     st.markdown('<div class="main-header">🧬 SYSTEM ARCHITEKTUR MATRIX 🧬</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">Die 6 exekutiven Topologien der YGGDRASIL_OS</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Die exekutiven Topologien der YGGDRASIL_OS</div>', unsafe_allow_html=True)
 
     with st.expander("1. Ring Ω :: Sovereign Apex & 4x4 Council"):
         code1 = """
@@ -314,18 +301,6 @@ elif nav == "🧬 Architektur-Matrix":
             AWK <-->|Shadow-Pass| SHAD
         """
         render_mermaid(code3, height=500)
-
-    with st.expander("4. Fünf Wege :: Meta-Ebene (Denken/Entscheiden/Handeln)"):
-        code4 = """
-        flowchart LR
-            classDef meta fill:#0a0a14,stroke:#FFD700,stroke-width:3px,color:#FFD700
-            classDef apex fill:#1a0000,stroke:#FF0055,stroke-width:3px,color:#fff
-            classDef ute fill:#001a00,stroke:#00FF00,stroke-width:2px,color:#88ff88
-            classDef phi fill:#000,stroke:#fff,stroke-width:2px,color:#FFD700
-            classDef tri fill:#121224,stroke:#9D4EDD,stroke-width:2px,color:#E0AAFF
-            ASME["ASME DENKT"]:::meta --> APEX["APEX ENTSCHEIDET"]:::apex --> UTE["UTE VOLLZIEHT"]:::ute --> PHI["Φ∅ BEWAHRT"]:::phi --> TRI["TRINITY INTERPRETIERT"]:::tri --> ASME
-        """
-        render_mermaid(code4, height=300)
 
 # Footer
 st.divider()
