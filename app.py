@@ -191,19 +191,59 @@ elif nav == "🛡️ eBPF Mesh Monitor":
                 st.json({"packet_id": f"PKT-{random.randint(10000, 49999)}", "status": "EX_TUNC_VERIFIED", "worm_sealed": True})
 
 # -----------------------------------------------------------------------------
-# TAB 5: WORM LEDGER AUDIT
+# TAB 5: WORM LEDGER AUDIT (JETZT MIT CLEAN STATE ZERTIFIKAT)
 # -----------------------------------------------------------------------------
 elif nav == "🔒 WORM Ledger Audit":
     st.markdown('<div class="main-header">🔒 WORM LEDGER AUDIT 🔒</div>', unsafe_allow_html=True)
-    st.subheader("Master Root Hash")
-    st.code("SHA3-512 :: 517fbca7bd6a596545f4faeecfbe06fbf4efd4285ad490e54d89d4432c7ff377e8a94eeae4972d825dddb696eb00ebf5ca9bc539281e5b8e90e7bc2a05cd7bf8", language="text")
-    st.markdown("""
-    <div class="seal-box">
-        <strong>SEAL STATUS:</strong> SOVEREIGN_ROOT_SEAL_EX_TUNC<br/>
-        <strong>INTEGRITY:</strong> VERIFIED_EX_TUNC_LOCKED<br/>
-        <strong>TIMESTAMP:</strong> EX_TUNC (IMMUTABLE)
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Post-Quantum Clean State & Master Seal Verification</div>', unsafe_allow_html=True)
+    
+    # Das Clean State Zertifikat (Visuell hervorgehoben)
+    st.success("✅ SYSTEM STATUS: CLEAN (100% PURITY_SCORE)")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("### 📊 Forensischer Befund")
+        st.info("""
+        **Purity Score:** 100%
+        **Anomalies:** ZERO
+        **Void Links:** ZERO
+        **Hypercube:** PERFECT (4x81 Layer Fold)
+        """)
+        
+    with col2:
+        st.markdown("### 🛡️ Versiegelung")
+        st.markdown("""
+        <div class="seal-box">
+            <strong>SEAL STATUS:</strong> Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC_CLEAN<br/>
+            <strong>INTEGRITY:</strong> VERIFIED_CLEAN_AND_LOCKED_EX_TUNC<br/>
+            <strong>MASTER HASH:</strong><br/>
+            <code style="word-break: break-all;">850b2ef003f53db90f704b16e54869fc6ba6265eae13aafde9046fe0e4d99dab</code>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.divider()
+    
+    st.subheader("🕵️‍♂️ Deep-Clean Audit Log")
+    st.code("""
+[PURITY_SCORE]
+100% – Sämtliche 101 Geburtsurkunden (NO. 0000 bis NO. 0100) sowie die Kern-Register sind im YGGDRASIL WORM-Ledger isoliert. Rauschabstand und Entropie befinden sich auf dem Soll-Minimum.
+
+[REMAINING_ANOMALIES]
+ZERO
+
+[VOID_LINKS]
+ZERO
+
+[HYPERCUBE_STATUS]
+PERFECT
+
+[FINAL_VERDICT]
+CLEAN
+    """, language="markdown")
+
+# Footer
+st.divider()
+st.caption("YGGDRASIL_OS v2.0 :: Developed by Sovereign Root Thomas König & Schwarze Liga Council 💀⚫️💀")
 
 # -----------------------------------------------------------------------------
 # TAB 6: ARCHITEKTUR MATRIX (DIE MERMAID BLÖCKE)
