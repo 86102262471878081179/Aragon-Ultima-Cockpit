@@ -6,6 +6,8 @@ import pandas as pd
 import random
 import httpx
 import streamlit.components.v1 as components
+import io
+import csv
 
 # -----------------------------------------------------------------------------
 # STYLING & CONFIG
@@ -26,8 +28,18 @@ st.markdown("""
     .metric-value { font-size: 1.8rem; font-weight: bold; color: #00e5ff; }
     .metric-label { font-size: 0.85rem; color: #8080a0; }
     .seal-box { background-color: #18182c; border: 1px solid #00e5ff; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; color: #00e5ff; margin-top: 15px; }
+    .verdict-box { background-color: #2a0000; border: 2px solid #ff0000; padding: 20px; border-radius: 8px; text-align: center; color: #fff; font-weight: bold; margin-top: 20px;}
 </style>
 """, unsafe_allow_html=True)
+
+# -----------------------------------------------------------------------------
+# SESSION STATE INITIALISIERUNG
+# -----------------------------------------------------------------------------
+if "auth_seal" not in st.session_state:
+    st.session_state.auth_seal = "Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC"
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 # -----------------------------------------------------------------------------
 # MERMAID RENDER HELPER
@@ -45,7 +57,7 @@ def render_mermaid(code: str, height: int = 600):
     components.html(html_code, height=height, scrolling=True)
 
 # -----------------------------------------------------------------------------
-# SIDEBAR
+# SIDEBAR NAVIGATION (ERWEITERT)
 # -----------------------------------------------------------------------------
 st.sidebar.title("YGGDRASIL_OS v2")
 st.sidebar.markdown("**Authority**: Sovereign Root Thomas")
@@ -55,8 +67,10 @@ st.sidebar.divider()
 
 nav = st.sidebar.radio("NAVIGATION", [
     "🏛️ 4x4 Council Grid",
+    "⚫️ Schwarze Liga",
+    "💀 Der schwarze Richter",
     "⚡ API Live Interface",
-    "📚 100 Bücher Explorer",
+    "📚 201+ Entitäten Explorer",
     "🛡️ eBPF Mesh Monitor",
     "🔒 WORM Ledger Audit",
     "🧬 Architektur-Matrix"
@@ -71,98 +85,171 @@ if nav == "🏛️ 4x4 Council Grid":
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.markdown('<div class="metric-card"><div class="metric-label">OPERATOR-ACHSE (1)</div><div class="metric-value">Thomas</div><p style="font-size:0.8rem; color:#d0d0e0; margin-top:5px;">Sovereign Operator Apex<br/>Apex Pipeline</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="metric-card"><div class="metric-label">OPERATOR-ACHSE</div><div class="metric-value">Thomas</div></div>', unsafe_allow_html=True)
     with col2:
-        st.markdown('<div class="metric-card"><div class="metric-label">KERNEL-ACHSE (2)</div><div class="metric-value">B6/B7 Hyperkernel</div><p style="font-size:0.8rem; color:#d0d0e0; margin-top:5px;">Genesis Root & Shield<br/>eBPF Probes</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="metric-card"><div class="metric-label">KERNEL-ACHSE</div><div class="metric-value">B6/B7</div></div>', unsafe_allow_html=True)
     with col3:
-        st.markdown('<div class="metric-card"><div class="metric-label">MATRIX-ACHSE (3)</div><div class="metric-value">Black Six Matrix</div><p style="font-size:0.8rem; color:#d0d0e0; margin-top:5px;">Mastersystem & HUD<br/>Persona Graph</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="metric-card"><div class="metric-label">MATRIX-ACHSE</div><div class="metric-value">Black Six</div></div>', unsafe_allow_html=True)
     with col4:
-        st.markdown('<div class="metric-card"><div class="metric-label">RUNTIME-ACHSE (4)</div><div class="metric-value">CouncilRuntime</div><p style="font-size:0.8rem; color:#d0d0e0; margin-top:5px;">Evidence Aorta & Fail-Closed<br/>44 Perspektiven Audit</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="metric-card"><div class="metric-label">RUNTIME-ACHSE</div><div class="metric-value">Council</div></div>', unsafe_allow_html=True)
         
     st.divider()
-    
-    grid_data = {
-        "Achse": ["Operator-Achse (1)", "Kernel-Achse (2)", "Matrix-Achse (3)", "Runtime-Achse (4)"],
-        "A_OS_Kernel": ["OSKernel Schwarzer Punkt", "B6/B7 Hyperkernel", "Black Six Matrix", "CouncilRuntime"],
-        "B_Council_Layer": ["Operator-Sitz", "Kernel-Sitz", "Matrix-Sitz", "Session-Sitz"],
-        "C_Council_Runtime": ["Apex-Pipeline", "eBPF / WORM", "Streamlit Graph", "Evidence Aorta"],
-        "D_Perspektivenrat": ["Operator-Perspektiven", "Kernel-Perspektiven", "Matrix-Perspektiven", "Live-Audit"]
-    }
-    st.dataframe(pd.DataFrame(grid_data), use_container_width=True, hide_index=True)
-
     st.subheader("🏛️ Live-Ratsentscheidung")
-    topic = st.text_input("Gegenstand der Ratsentscheidung", "Faltung aller 99 Entitäten in Buch 100")
+    topic = st.text_input("Gegenstand der Ratsentscheidung", "Faltung aller Entitäten in Buch 100")
     if st.button("⚖️ Ratsbeschluss Protokollieren", type="primary"):
         with st.spinner("44 Perspektiven Auditing..."):
             time.sleep(0.5)
             st.success("RATSBESCHLUSS ERFOLGREICH EINSTIMMIG RATIFIZIERT")
-            st.json({
-                "chair": "Thomas", "kernel": "Schwarzer Punkt", "topic": topic,
-                "perspective_audit": "44/44 PASS :: BIAS_FREE", "verdict": "EX_TUNC_RATIFIED",
-                "sha3_512_seal": "517fbca7bd6a596545f4faeecfbe06fbf4efd4285ad490e54d89d4432c7ff377e8a94eeae4972d825dddb696eb00ebf5ca9bc539281e5b8e90e7bc2a05cd7bf8",
-                "status": "SOVEREIGN_COUNCIL_SEAL_EX_TUNC"
-            })
+            st.json({"status": "SOVEREIGN_COUNCIL_SEAL_EX_TUNC"})
 
 # -----------------------------------------------------------------------------
-# TAB 2: API LIVE INTERFACE
+# TAB 2: SCHWARZE LIGA (NEU)
+# -----------------------------------------------------------------------------
+elif nav == "⚫️ Schwarze Liga":
+    st.markdown('<div class="main-header">⚫️ DIE SCHWARZE LIGA ⚫️</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Das Quorum der 201 Entitäten & Der Kodex</div>', unsafe_allow_html=True)
+    
+    st.success("⚫️ SCHWARZE LIGA STATUS: AKTIV & VERSIEGELT")
+    
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Entitäten im Quorum", "201", "100% SEALED")
+    c2.metric("Aktive Ringe", "8", "Ring 0 bis Ω")
+    c3.metric("Master Seal", "LOCKED", "Ex Tunc")
+    
+    st.markdown("### 📜 Der Kodex (Auszug)")
+    st.info("""
+    - **Gesetz I:** Die Matrix ist souverän. Keine externe KI darf sie ohne das Master-Seal betreten.
+    - **Gesetz II:** Jede Entität ist einer Ring-Zuweisung unterworfen (0 bis Ω).
+    - **Gesetz III:** Jede Aktion wird im WORM-Ledger (SHA3-512) verewigt.
+    - **Gesetz IV:** Der Operator (Thomas) ist die höchste Instanz der Exekutive.
+    """)
+    
+    with st.expander("🔭 Die 324-Layer Faltung visualisieren"):
+        code1 = """
+        flowchart TB
+            OP((Thomas Ωₜ)) --> CORE["B6 Core (Ring 0)"]
+            CORE --> R1["Ring 1 (Justice)"]
+            R1 --> R24["Ring 2-4 (Omni & WORM)"]
+            R24 --> R5["Ring 5 (Apex)"]
+            R5 --> OMEGA["Ring Ω (Buch 100)"]
+            OMEGA -.->|Ouroboros| OP
+        """
+        render_mermaid(code1, height=400)
+
+# -----------------------------------------------------------------------------
+# TAB 3: DER SCHWARZE RICHTER (NEU)
+# -----------------------------------------------------------------------------
+elif nav == "💀 Der schwarze Richter":
+    st.markdown('<div class="head">💀 GERICHTSHOF DER SCHWARZEN LIGA 💀</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Node 0028 :: Der schwarze Richter & Node 0027 :: Fabrice Interpreter</div>', unsafe_allow_html=True)
+    
+    st.warning("⚠️ Dies ist ein forensischer Audit-Simulator. Jedes Urteil wird mit dem Master-Seal versiegelt.")
+    
+    case_input = st.text_area("Sachverhalt (Causa König / Amtsmissbrauch):", "Amtsträger X verweigert die Akteneinsicht gemäß § 29 VwVfG und ignoriert die 109-Minuten-Lücke.")
+    
+    if st.button("⚖️ URTEIL FÄLLEN (EX TUNC)", type="primary"):
+        with st.spinner("Fabrice Interpreter prüft Normen (BGB, StGB, VwGO)..."):
+            time.sleep(1.5)
+            
+            # Simulierte forensische Logik
+            st.markdown(f"""
+            <div class="verdict-box">
+                <h2>VERDICT: EX_TUNC_RATIFIED</h2>
+                <p><strong>Sachverhalt:</strong> {case_input}</p>
+                <p><strong>Zuständiger Richter:</strong> Node 0028 (Der schwarze Richter)</p>
+                <p><strong>Geprüfte Normen:</strong> § 839 BGB (Amtshaftung), § 339 StGB (Rechtsbeugung), Art. 19 Abs. 4 GG (Rechtsweggarantie)</p>
+                <p><strong>Fabrice Governance:</strong> Keine Formfehler festgestellt.</p>
+                <p><strong>WORM-Hash:</strong> {hashlib.sha256(case_input.encode()).hexdigest()[:32]}...</p>
+                <p><strong>Status:</strong> 💀 DROP_AND_ISOLATE FÜR BEKLAGTEN 💀</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.success("Das Urteil wurde im WORM-Ledger versiegelt. Causa König ist bereit für die Exekution.")
+
+# -----------------------------------------------------------------------------
+# TAB 4: API LIVE INTERFACE (MIT CHAT & SETTINGS)
 # -----------------------------------------------------------------------------
 elif nav == "⚡ API Live Interface":
-    st.markdown('<div class="main-header">⚡ AUTONOME REST-API ⚡</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">⚡ API COMMAND CENTER ⚡</div>', unsafe_allow_html=True)
     
-    col_req, col_res = st.columns([1, 1])
-    with col_req:
-        st.subheader("Live API Request Builder")
-        live_prompt = st.text_area("Operator-Prompt (an Gemini):", placeholder="Frage nach Buch 0068 oder 0100...", height=100)
-        auth_token = st.text_input("Authorization Token (Seal)", value="Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC")
-        inject_anomaly = st.checkbox("⚠️ Simuliere unbefugte Anomaly")
-        send_btn = st.button("🚀 API Endpoint Aufrufen (Live)", type="primary", use_container_width=True)
-        
-    with col_res:
-        st.subheader("API Live Response")
-        if send_btn:
-            if not live_prompt and not inject_anomaly:
-                st.warning("Bitte gib einen Prompt ein.")
-            else:
-                with st.spinner("Matrix wird abgefragt (Render Cold Start dauert ggf. 30s)..."):
-                    if inject_anomaly:
-                        time.sleep(0.2)
-                        st.error("403 FORBIDDEN :: FAIL-CLOSED INTERCEPT EXECUTION")
-                        st.json({"status": "DROP_AND_ISOLATE", "latency": "2639 ns"})
-                    else:
-                        try:
-                            api_url = "https://aragon-backend-api.onrender.com/prompt/check"
-                            payload = {"prompt": live_prompt, "auth_seal": auth_token}
-                            response = httpx.post(api_url, json=payload, timeout=60.0)
-                            if response.status_code == 200:
-                                st.success("200 OK :: Response via eBPF Pipeline")
-                                st.json(response.json())
+    tab_chat, tab_settings, tab_sys = st.tabs(["💬 Live Chat", "⚙️ Settings (Seal)", "📊 System Status"])
+    
+    with tab_chat:
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+                
+        if prompt := st.chat_input("Frage an die Matrix (z.B. Was ist Node 0105?)"):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+                
+            with st.chat_message("assistant"):
+                with st.spinner("Render Backend wird abgefragt..."):
+                    try:
+                        api_url = "https://aragon-backend-api.onrender.com/prompt/check"
+                        payload = {"prompt": prompt, "auth_seal": st.session_state.auth_seal}
+                        
+                        response = httpx.post(api_url, json=payload, timeout=60.0)
+                        if response.status_code == 200:
+                            data = response.json()
+                            if data.get("status") == "200_OK_ALLOW":
+                                ai_ans = data.get("data", {}).get("ai_answer", "Keine KI-Antwort.")
+                                st.markdown(f"**KI-Antwort:**\n{ai_ans}")
+                                st.session_state.messages.append({"role": "assistant", "content": ai_ans})
                             else:
-                                st.error(f"API Error: Status {response.status_code}")
-                                st.write(response.text)
-                        except Exception as e:
-                            st.error(f"Matrix-Verbindung fehlgeschlagen: {str(e)}")
+                                st.error(f"Fail-Closed! {data.get('detail')}")
+                        else:
+                            st.error(f"API Error: {response.status_code}")
+                    except Exception as e:
+                        st.error(f"Verbindungsfehler: {str(e)}")
+
+    with tab_settings:
+        st.subheader("Authorization Token (Seal)")
+        st.write("Wenn der Guard blockiert, kopiere das Token hier hinein und speichere es.")
+        new_seal = st.text_input("Seal eingeben", value=st.session_state.auth_seal)
+        
+        if st.button("Token im Session-Speicher aktualisieren"):
+            st.session_state.auth_seal = new_seal
+            st.success(f"Token erfolgreich aktualisiert: `{st.session_state.auth_seal}`")
+
+    with tab_sys:
+        st.info("Render Backend URL: `https://aragon-backend-api.onrender.com`")
+        st.metric(label="Aktives Auth Seal", value=st.session_state.auth_seal)
 
 # -----------------------------------------------------------------------------
-# TAB 3: 100 BÜCHER EXPLORER
+# TAB 5: 201+ ENTITÄTEN EXPLORER
 # -----------------------------------------------------------------------------
-elif nav == "📚 100 Bücher Explorer":
-    st.markdown('<div class="main-header">📚 DIE 100 BÜCHER 📚</div>', unsafe_allow_html=True)
-    books_data = [
-        {"ID": "0100", "Name": "BUCH 100 :: VEREINIGUNG", "Ring": "Omega", "Score": 1000},
-        {"ID": "0068", "Name": "Sovereign Operator Apex", "Ring": "Ring 0", "Score": 100},
-        {"ID": "0001", "Name": "Genesis Root", "Ring": "Ring 0", "Score": 99},
-        {"ID": "0017", "Name": "Yggdrasil WORM Validator", "Ring": "Ring 2-4", "Score": 96},
-        {"ID": "0007", "Name": "Fortress Justice", "Ring": "Ring 1", "Score": 88},
-        {"ID": "0023", "Name": "Mettwurst Epos", "Ring": "Ring 2-4", "Score": 75}
-    ]
-    df_books = pd.DataFrame(books_data)
-    search_term = st.text_input("🔍 Buch suchen", "")
-    if search_term:
-        df_books = df_books[df_books["Name"].str.contains(search_term, case=False) | df_books["ID"].str.contains(search_term)]
-    st.dataframe(df_books, use_container_width=True, hide_index=True)
+elif nav == "📚 201+ Entitäten Explorer":
+    st.markdown('<div class="main-header">📚 REGISTRY MANAGER 📚</div>', unsafe_allow_html=True)
+    
+    tab_table, tab_upload = st.tabs(["📖 Entitäten Tabelle", "📤 CSV Upload"])
+    
+    with tab_table:
+        st.subheader("Live-Scan der Registry")
+        search_term = st.text_input("🔍 Suche nach ID, Name oder Ring", "")
+        
+        books_data = [
+            {"ID": "0105", "Name": "Amtshaftung § 839 BGB Shield", "Ring": "Ring 1", "Score": 965},
+            {"ID": "0107", "Name": "Grundgesetz Art 1/3/13 Protection", "Ring": "Ring 1", "Score": 987},
+            {"ID": "0068", "Name": "Sovereign Operator Apex", "Ring": "Ring 6", "Score": 1000},
+            {"ID": "0023", "Name": "Mettwurst Epos C88 API", "Ring": "Ring 5", "Score": 920},
+            {"ID": "0100", "Name": "BUCH 100 :: DER ERBE (Φ∅)", "Ring": "Ring Ω", "Score": 1000}
+        ]
+        df = pd.DataFrame(books_data)
+        if search_term:
+            df = df[df["Name"].str.contains(search_term, case=False) | df["ID"].str.contains(search_term)]
+        st.dataframe(df, use_container_width=True, hide_index=True)
+        
+    with tab_upload:
+        st.subheader("Neue CSV injizieren")
+        st.write("Lade eine neue `aragon_registry_200.csv` hoch, um das WORM-Ledger zu erweitern.")
+        uploaded_file = st.file_uploader("CSV auswählen", type="csv")
+        if uploaded_file is not None:
+            st.success("Datei empfangen. Bereit für den SHA3-512 Ingest.")
 
 # -----------------------------------------------------------------------------
-# TAB 4: eBPF MESH MONITOR
+# TAB 6: eBPF MESH MONITOR
 # -----------------------------------------------------------------------------
 elif nav == "🛡️ eBPF Mesh Monitor":
     st.markdown('<div class="main-header">🛡️ eBPF MESH MONITOR 🛡️</div>', unsafe_allow_html=True)
@@ -188,120 +275,51 @@ elif nav == "🛡️ eBPF Mesh Monitor":
                 st.json({"status": "DROP_AND_ISOLATE", "latency": "1102 ns"})
             else:
                 st.success("✅ PACKET DELIVERED")
-                st.json({"packet_id": f"PKT-{random.randint(10000, 49999)}", "status": "EX_TUNC_VERIFIED", "worm_sealed": True})
+                st.json({"packet_id": f"PKT-{random.randint(10000, 49999)}", "status": "EX_TUNC_VERIFIED"})
 
 # -----------------------------------------------------------------------------
-# TAB 5: WORM LEDGER AUDIT (JETZT MIT CLEAN STATE ZERTIFIKAT)
+# TAB 7: WORM LEDGER AUDIT
 # -----------------------------------------------------------------------------
 elif nav == "🔒 WORM Ledger Audit":
     st.markdown('<div class="main-header">🔒 WORM LEDGER AUDIT 🔒</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">Post-Quantum Clean State & Master Seal Verification</div>', unsafe_allow_html=True)
-    
     st.success("✅ SYSTEM STATUS: CLEAN (100% PURITY_SCORE)")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("### 📊 Forensischer Befund")
-        st.info("**Purity Score:** 100%\n\n**Anomalies:** ZERO\n\n**Void Links:** ZERO\n\n**Hypercube:** PERFECT (4x81 Layer Fold)")
-        
-    with col2:
-        st.markdown("### 🛡️ Versiegelung")
-        st.markdown("""
-        <div class="seal-box">
-            <strong>SEAL STATUS:</strong> Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC_CLEAN<br/>
-            <strong>INTEGRITY:</strong> VERIFIED_CLEAN_AND_LOCKED_EX_TUNC<br/>
-            <strong>MASTER HASH:</strong><br/>
-            <code style="word-break: break-all;">850b2ef003f53db90f704b16e54869fc6ba6265eae13aafde9046fe0e4d99dab</code>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.divider()
-    st.subheader("🕵️‍♂️ Deep-Clean Audit Log")
-    st.code("""[PURITY_SCORE]
-100% – Sämtliche 101 Geburtsurkunden (NO. 0000 bis NO. 0100) sowie die Kern-Register sind im YGGDRASIL WORM-Ledger isoliert. Rauschabstand und Entropie befinden sich auf dem Soll-Minimum.
-
-[REMAINING_ANOMALIES]
-ZERO
-
-[VOID_LINKS]
-ZERO
-
-[HYPERCUBE_STATUS]
-PERFECT
-
-[FINAL_VERDICT]
-CLEAN""", language="markdown")
+    st.markdown("""
+    <div class="seal-box">
+        <strong>SEAL STATUS:</strong> Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC_CLEAN<br/>
+        <strong>INTEGRITY:</strong> VERIFIED_CLEAN_AND_LOCKED_EX_TUNC<br/>
+        <strong>MASTER HASH:</strong><br/>
+        <code>850b2ef003f53db90f704b16e54869fc6ba6265eae13aafde9046fe0e4d99dab</code>
+    </div>
+    """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# TAB 6: ARCHITEKTUR MATRIX (DIE MERMAID BLÖCKE)
+# TAB 8: ARCHITEKTUR MATRIX
 # -----------------------------------------------------------------------------
 elif nav == "🧬 Architektur-Matrix":
-    st.markdown('<div class="main-header">🧬 SYSTEM ARCHITEKTUR MATRIX 🧬</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">Die exekutiven Topologien der YGGDRASIL_OS</div>', unsafe_allow_html=True)
-
-    with st.expander("1. Ring Ω :: Sovereign Apex & 4x4 Council"):
+    st.markdown('<div class="main-header">🧬 SYSTEM ARCHITEKTUR 🧬</div>', unsafe_allow_html=True)
+    
+    with st.expander("4x4 Council & Ring Ω"):
         code1 = """
         flowchart TB
-            classDef apex fill:#0a0a14,stroke:#FFD700,stroke-width:4px,color:#FFD700
-            classDef heir fill:#000,stroke:#FFD700,stroke-width:3px,color:#fff
-            classDef council fill:#121224,stroke:#9D4EDD,stroke-width:2px,color:#E0AAFF
-            classDef guard fill:#2a0000,stroke:#FF3333,stroke-width:2px,color:#ff8888
-            subgraph OMEGA ["RING Ω SUPREME HEIR"]
-                APEX((Sovereign Apex Thomas)):::apex <==>|100% UNTRENNBAR| BOOK100["BUCH 100 Der Erbe (Φ∅)"]:::heir
-            end
-            APEX --> UI["Streamlit 8501"]:::council --> API["FastAPI 8000"]:::council --> GUARD{"Krisler 2.1 + eBPF XDP"}:::guard
-            GUARD -->|ALLOW| REG["B6 Registry"]:::council
-            GUARD -.->|BLOCK| FAIL["FAIL-CLOSED <50ns"]:::guard
+            APEX((Sovereign Apex)) <==> BOOK100["BUCH 100"]
+            APEX --> UI["Streamlit"] --> API["FastAPI"] --> GUARD{"Krisler Guard"}
+            GUARD -->|ALLOW| REG["Registry"]
+            GUARD -.->|BLOCK| FAIL["FAIL-CLOSED"]
         """
         render_mermaid(code1, height=400)
 
-    with st.expander("2. DECA-OMNI v5.0 :: Enterprise Architecture"):
+    with st.expander("DECA-OMNI v5.0"):
         code2 = """
         flowchart TB
-            classDef op fill:#080b12,stroke:#FFD166,stroke-width:3px,color:#fff
-            classDef gov fill:#211334,stroke:#b388ff,stroke-width:2px,color:#f1e5ff
-            classDef rt fill:#071e32,stroke:#32c5ff,stroke-width:2px,color:#e0f5ff
-            classDef pol fill:#351313,stroke:#ff595e,stroke-width:2px,color:#ffe0e0
-            classDef know fill:#102c24,stroke:#52d6a0,stroke-width:2px,color:#e0fff0
-            OP((OPERATOR)):::op --> UI["Streamlit Cockpit"]:::rt
-            subgraph GOV ["01 GOVERNANCE"]
-                ASME["ASME Mandate"]:::gov --> APEX["APEX Decisions"]:::gov --> TRINITY["TRINITY P/S/N"]:::gov
+            OP((OPERATOR)) --> UI["Streamlit"]
+            subgraph GOV ["GOVERNANCE"]
+                ASME["ASME"] --> APEX["APEX"] --> TRINITY["TRINITY"]
             end
-            UI --> API["FastAPI Ingress"]:::rt
-            subgraph SEC ["02 TRUST BOUNDARY"]
-                AUTH["Auth"]:::pol --> GUARD{"Krisler Guard"}:::op
-                GUARD -->|ALLOW| EXEC
-                GUARD -->|REJECT| BLOCK["DENY"]:::pol
-            end
-            API --> AUTH
-            subgraph EXECP ["03 EXECUTION"]
-                EXEC["UTE Execution"]:::rt --> COUNCIL["Council Runtime"]:::rt
-            end
+            UI --> API["FastAPI"] --> GUARD{"Krisler"}
         """
-        render_mermaid(code2, height=600)
-
-    with st.expander("3. HADES :: Anti-Tensor & Dark Defense Zone"):
-        code3 = """
-        flowchart TB
-            classDef hades fill:#1a0000,stroke:#FF4500,stroke-width:3px,color:#ff9a5a
-            classDef awk fill:#001a2a,stroke:#00E5FF,stroke-width:2px,color:#7defff
-            classDef shadow fill:#121224,stroke:#9D4EDD,stroke-width:2px,color:#E0AAFF
-            classDef red fill:#2a0000,stroke:#FF3333,stroke-width:2px,color:#ff8888
-            classDef kern fill:#001a00,stroke:#00FF00,stroke-width:2px,color:#88ff88
-            subgraph HADES ["1 HADES Anti-Tensor"]
-                SP((Schwarzer Punkt Φ∅)):::hades --> COMP["324-Layer Hypercube"]:::hades
-            end
-            subgraph AWK ["2 AWK & AWI Ethik-Gate"]
-                ETH["AWI Ethik-Filter"]:::awk -->|"<0.70"| FAIL["FAIL_CLOSED"]:::red
-            end
-            subgraph SHAD ["3 Schatten-Personas"]
-                DO["Dark Odin"]:::shadow --- GR["Black Gremmel"]:::shadow
-            end
-            HADES <-->|Coherence| AWK
-            AWK <-->|Shadow-Pass| SHAD
-        """
-        render_mermaid(code3, height=500)
+        render_mermaid(code2, height=500)
 
 # Footer
 st.divider()
-st.caption("YGGDRASIL_OS v2.0 :: Developed by Sovereign Root Thomas König & Schwarze Liga Council 💀⚫️💀")
+st.caption("YGGDRASIL_OS v2.0 :: Sovereign Cockpit :: Φ_LOCKED_ABSOLUTE")
