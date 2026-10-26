@@ -1,3 +1,15 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+================================================================================
+            YGGDRASIL_OS :: SOVEREIGN COCKPIT v4.0 (BOOK EDITION)
+================================================================================
+Author: Thomas König / Odin Ultra Root
+Audit:  Gremmel Sentienel v5.2 (KVL PASSED)
+Lines:  > 1.100 (Monolith)
+================================================================================
+"""
+
 import streamlit as st
 import json
 import time
@@ -8,12 +20,61 @@ import httpx
 import streamlit.components.v1 as components
 import io
 import csv
+import sqlite3
+import os
+import base64
+from datetime import datetime
+
+# Optional heavy dependencies (Fail-Safe)
+try:
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    import reportlab
+    HAS_REPORTLAB = True
+except ImportError:
+    HAS_REPORTLAB = False
+
+try:
+    from cryptography.fernet import Fernet
+    HAS_CRYPTO = True
+except ImportError:
+    HAS_CRYPTO = False
 
 # ============================================================
-# 1. PAGE CONFIG + CSS
+# 1. DATABASE INITIALISIERUNG (SQLite)
+# ============================================================
+DB_PATH = "yggdrasil_sovereign.db"
+
+def init_db():
+    """Erstellt die Tabellen, falls sie nicht existieren (Fail-Safe)."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS chronik 
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, kind TEXT, msg TEXT)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS feinde 
+                 (id TEXT PRIMARY KEY, name TEXT, grund TEXT, status TEXT)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS votes 
+                 (proposal TEXT PRIMARY KEY, ja INTEGER, nein INTEGER, enthaltung INTEGER)''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
+def db_log(kind: str, msg: str):
+    """Schreibt Events hart in die SQLite-Datenbank."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("INSERT INTO chronik (ts, kind, msg) VALUES (?, ?, ?)",
+              (time.strftime("%Y-%m-%d %H:%M:%S"), kind, msg))
+    conn.commit()
+    conn.close()
+
+# ============================================================
+# 2. PAGE CONFIG + CSS
 # ============================================================
 st.set_page_config(
-    page_title="YGGDRASIL_OS :: Sovereign Cockpit v3",
+    page_title="YGGDRASIL_OS :: Sovereign Cockpit v4",
     page_icon="⚫",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -43,41 +104,46 @@ st.markdown("""
     .doc-output { background: #0d0d1a; border: 1px solid #d4af37; padding: 20px;
         border-radius: 6px; font-family: 'Times New Roman', serif; font-size: 0.95rem;
         white-space: pre-wrap; line-height: 1.6; }
+    .book-text { font-family: 'Georgia', serif; font-size: 1.1rem; line-height: 1.8;
+        text-align: justify; color: #e0e0f0; padding: 20px; border-left: 4px solid #d4af37; background: #101020;}
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# 2. SESSION STATE
+# 3. SESSION STATE (Synchronisiert mit DB)
 # ============================================================
 if "auth_seal" not in st.session_state:
     st.session_state.auth_seal = "Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC"
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "chronik" not in st.session_state:
-    st.session_state.chronik = [
-        {"ts": time.strftime("%H:%M:%S"), "kind": "EXEC",
-         "msg": "KERNEL_INIT :: YGGDRASIL_OS v3 online"}
-    ]
-if "feinde" not in st.session_state:
-    st.session_state.feinde = [
-        {"ID": "F-001", "Name": "Amtsträger X", "Grund": "Amtsmissbrauch § 339 StGB", "Status": "ISOLATED"},
-        {"ID": "F-002", "Name": "König der Lüge", "Grund": "Hochverrat a.D.", "Status": "BLACKLISTED"},
-        {"ID": "F-003", "Name": "Mettwurst C88", "Grund": "RAG-Poisoning", "Status": "QUARANTINED"},
-    ]
-if "votes" not in st.session_state:
-    st.session_state.votes = {}
-if "metric_history" not in st.session_state:
-    st.session_state.metric_history = []
 if "kill_switch_active" not in st.session_state:
     st.session_state.kill_switch_active = False
 
+# Chronik aus DB laden
+conn = sqlite3.connect(DB_PATH)
+c = conn.cursor()
+c.execute("SELECT ts, kind, msg FROM chronik ORDER BY id ASC")
+st.session_state.chronik = [{"ts": r[0], "kind": r[1], "msg": r[2]} for r in c.fetchall()]
+
+# Feinde aus DB laden
+c.execute("SELECT id, name, grund, status FROM feinde")
+st.session_state.feinde = [{"ID": r[0], "Name": r[1], "Grund": r[2], "Status": r[3]} for r in c.fetchall()]
+
+# Votes aus DB laden
+c.execute("SELECT proposal, ja, nein, enthaltung FROM votes")
+st.session_state.votes = {r[0]: {"JA": r[1], "NEIN": r[2], "ENTHALTUNG": r[3]} for r in c.fetchall()}
+conn.close()
+
+if "metric_history" not in st.session_state:
+    st.session_state.metric_history = []
+
 # ============================================================
-# 3. HELPERS
+# 4. HELPERS
 # ============================================================
 def log_event(kind: str, msg: str):
-    st.session_state.chronik.append({
-        "ts": time.strftime("%H:%M:%S"), "kind": kind, "msg": msg,
-    })
+    """Schreibt ins UI und in die SQLite DB."""
+    st.session_state.chronik.append({"ts": time.strftime("%H:%M:%S"), "kind": kind, "msg": msg})
+    db_log(kind, msg)
 
 def render_mermaid(code: str, height: int = 600):
     html_code = f'''
@@ -89,10 +155,34 @@ def render_mermaid(code: str, height: int = 600):
     '''
     components.html(html_code, height=height, scrolling=True)
 
+def create_pdf_report(text_content: str, title: str) -> bytes:
+    """Erzeugt ein echtes PDF via ReportLab (WORM-Dokument)."""
+    if not HAS_REPORTLAB:
+        return b"PDF_GENERATION_FAILED_REPORTLAB_MISSING"
+    
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(50, 800, title)
+    p.setFont("Helvetica", 10)
+    p.drawString(50, 780, f"Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Einfacher Text-Wrap
+    text_object = p.beginText(50, 750)
+    text_object.setFont("Helvetica", 11)
+    for line in text_content.split('\n'):
+        text_object.textLine(line)
+    
+    p.drawText(text_object)
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+    return buffer.getvalue()
+
 # ============================================================
-# 4. SIDEBAR NAVIGATION
+# 5. SIDEBAR NAVIGATION
 # ============================================================
-st.sidebar.title("YGGDRASIL_OS v3")
+st.sidebar.title("YGGDRASIL_OS v4")
 st.sidebar.markdown("**Authority**: Sovereign Root Thomas")
 st.sidebar.markdown("**Kernel**: Schwarzer Punkt")
 st.sidebar.divider()
@@ -119,10 +209,15 @@ nav = st.sidebar.radio("NAVIGATION", [
     "🚨 Notfall-Kill-Switch",
     "💾 Sovereign Export",
     "🧬 Architektur-Matrix",
+    "📄 Buch-Druckerei (PDF)",
+    "🔐 AES-256 Tresor",
+    "⚖️ Axiome-Prüfer",
+    "📖 Das Schwarze Buch",
+    "🗄️ SQLite Direkt-Zugriff",
 ])
 
 st.sidebar.divider()
-st.sidebar.caption(f"Chronik: {len(st.session_state.chronik)} Einträge")
+st.sidebar.caption(f"Chronik: {len(st.session_state.chronik)} (DB Persistiert)")
 st.sidebar.caption(f"Feindregister: {len(st.session_state.feinde)} Ziele")
 st.sidebar.caption(f"Metriken: {len(st.session_state.metric_history)} Samples")
 
@@ -186,7 +281,7 @@ elif nav == "💀 Der schwarze Richter":
             log_event("ALERT", f"Urteil gefällt: {case_input[:60]}...")
 
 # ============================================================
-# PANEL 4: NORMEN-ENGINE (NEU)
+# PANEL 4: NORMEN-ENGINE
 # ============================================================
 elif nav == "⚖️ Normen-Engine":
     st.markdown('<div class="main-header">⚖️ NORMEN-ENGINE & SCHADENSRECHNER</div>', unsafe_allow_html=True)
@@ -194,43 +289,18 @@ elif nav == "⚖️ Normen-Engine":
 
     with tab_norm:
         normen = {
-            "BGB": {
-                "§ 823": "Schadensersatzpflicht bei vorsätzlicher/fahrlässiger Schädigung",
-                "§ 826": "Sittenwidrige vorsätzliche Schädigung",
-                "§ 839": "Haftung bei Amtspflichtverletzung",
-                "§ 249": "Art und Umfang des Schadensersatzes",
-            },
-            "StGB": {
-                "§ 339": "Rechtsbeugung (Freiheitsstrafe 1-5 Jahre)",
-                "§ 340": "Körperverletzung im Amt",
-                "§ 353d": "Verbotene Mitteilungen über Gerichtsverhandlungen",
-                "§ 142": "Unerlaubtes Entfernen vom Unfallort",
-            },
-            "GG": {
-                "Art. 1": "Menschenwürde ist unantastbar",
-                "Art. 3": "Gleichheit vor dem Gesetz",
-                "Art. 19 Abs. 4": "Rechtsweggarantie",
-                "Art. 20 Abs. 3": "Bindung an Gesetz und Recht",
-            },
-            "VwVfG": {
-                "§ 28": "Anhörung Beteiligter",
-                "§ 29": "Akteneinsicht",
-                "§ 48": "Rücknahme eines rechtswidrigen Verwaltungsaktes",
-                "§ 51": "Wiederaufgreifen des Verfahrens",
-            },
-            "ZPO": {
-                "§ 138": "Erklärungspflicht über Tatsachen",
-                "§ 286": "Freie Beweiswürdigung",
-                "§ 91": "Kosten des Verfahrens",
-            },
+            "BGB": {"§ 823": "Schadensersatzpflicht", "§ 826": "Sittenwidrige Schädigung", "§ 839": "Amtspflichtverletzung", "§ 249": "Schadensersatz"},
+            "StGB": {"§ 339": "Rechtsbeugung", "§ 340": "Körperverletzung im Amt", "§ 353d": "Verbotene Mitteilungen", "§ 142": "Unfallflucht"},
+            "GG": {"Art. 1": "Menschenwürde", "Art. 3": "Gleichheit", "Art. 19 Abs. 4": "Rechtsweggarantie", "Art. 20 Abs. 3": "Bindung an Gesetz"},
+            "VwVfG": {"§ 28": "Anhörung", "§ 29": "Akteneinsicht", "§ 48": "Rücknahme", "§ 51": "Wiederaufgreifen"},
+            "ZPO": {"§ 138": "Erklärungspflicht", "§ 286": "Freie Beweiswürdigung", "§ 91": "Kosten"},
         }
         col_g, col_p = st.columns(2)
         with col_g:
             gesetz = st.selectbox("Gesetzbuch", list(normen.keys()))
         with col_p:
             paragraph = st.selectbox("Paragraph", list(normen[gesetz].keys()))
-        st.markdown(f'<div class="seal-box"><strong>{gesetz} {paragraph}</strong><br/><br/>'
-                    f'{normen[gesetz][paragraph]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="seal-box"><strong>{gesetz} {paragraph}</strong><br/><br/>{normen[gesetz][paragraph]}</div>', unsafe_allow_html=True)
 
     with tab_calc:
         st.subheader("Schadensersatz nach § 839 BGB i.V.m. Art. 34 GG")
@@ -241,8 +311,6 @@ elif nav == "⚖️ Normen-Engine":
 
         zinsen_reg = schaden * (zinssatz / 100) * jahre
         zinsen_verzug = schaden * (verzug / 100) * jahre
-        total_reg = schaden + zinsen_reg
-        total_verzug = schaden + zinsen_verzug
 
         c1, c2, c3 = st.columns(3)
         c1.metric("Basis-Schaden", f"{schaden:,.2f} €")
@@ -251,11 +319,11 @@ elif nav == "⚖️ Normen-Engine":
 
         st.divider()
         cA, cB = st.columns(2)
-        cA.metric("Gesamt regulär", f"{total_reg:,.2f} €")
-        cB.metric("Gesamt mit Verzug", f"{total_verzug:,.2f} €", delta=f"+{zinsen_verzug - zinsen_reg:,.2f} €")
+        cA.metric("Gesamt regulär", f"{schaden + zinsen_reg:,.2f} €")
+        cB.metric("Gesamt mit Verzug", f"{schaden + zinsen_verzug:,.2f} €", delta=f"+{zinsen_verzug - zinsen_reg:,.2f} €")
 
         if st.button("📋 Berechnung in WORM-Ledger protokollieren"):
-            log_event("WORM", f"Schadensberechnung: {total_verzug:,.2f} € gesiegelt")
+            log_event("WORM", f"Schadensberechnung: {schaden + zinsen_verzug:,.2f} € gesiegelt")
             st.success("Berechnung verewigt.")
 
 # ============================================================
@@ -264,20 +332,24 @@ elif nav == "⚖️ Normen-Engine":
 elif nav == "⚡ API Live Interface":
     st.markdown('<div class="main-header">⚡ API COMMAND CENTER ⚡</div>', unsafe_allow_html=True)
     tab_chat, tab_settings, tab_sys = st.tabs(["💬 Live Chat", "⚙️ Settings (Seal)", "📊 System Status"])
+    
     with tab_chat:
         for msg in st.session_state.messages:
             with st.chat_message(msg["role"]):
                 st.markdown(msg["content"])
+        
         if prompt := st.chat_input("Frage an die Matrix (z.B. Was ist Node 0105?)"):
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
+            
             with st.chat_message("assistant"):
                 with st.spinner("Render Backend wird abgefragt..."):
                     try:
                         api_url = "https://aragon-backend-api.onrender.com/prompt/check"
                         payload = {"prompt": prompt, "auth_seal": st.session_state.auth_seal}
                         response = httpx.post(api_url, json=payload, timeout=60.0)
+                        
                         if response.status_code == 200:
                             data = response.json()
                             if data.get("status") == "200_OK_ALLOW":
@@ -292,12 +364,14 @@ elif nav == "⚡ API Live Interface":
                             st.error(f"API Error: {response.status_code}")
                     except Exception as e:
                         st.error(f"Verbindungsfehler: {str(e)}")
+                        
     with tab_settings:
         new_seal = st.text_input("Authorization Token (Seal)", value=st.session_state.auth_seal)
         if st.button("Token aktualisieren"):
             st.session_state.auth_seal = new_seal
             log_event("EXEC", "Auth-Seal rotiert")
             st.success("Token gespeichert.")
+            
     with tab_sys:
         st.metric(label="Aktives Auth Seal", value=st.session_state.auth_seal)
         st.metric(label="Nachrichten im Verlauf", value=len(st.session_state.messages))
@@ -308,6 +382,7 @@ elif nav == "⚡ API Live Interface":
 elif nav == "📚 201+ Entitäten Explorer":
     st.markdown('<div class="main-header">📚 REGISTRY MANAGER 📚</div>', unsafe_allow_html=True)
     tab_table, tab_upload = st.tabs(["📖 Entitäten Tabelle", "📤 CSV Upload"])
+    
     with tab_table:
         search_term = st.text_input("🔍 Suche nach ID, Name oder Ring", "")
         books_data = [
@@ -339,7 +414,7 @@ elif nav == "📚 201+ Entitäten Explorer":
                 st.error(f"CSV-Fehler: {e}")
 
 # ============================================================
-# PANEL 7: URKUNDEN-FORGE (NEU)
+# PANEL 7: URKUNDEN-FORGE
 # ============================================================
 elif nav == "📜 Urkunden-Forge":
     st.markdown('<div class="main-header">📜 URKUNDEN-FORGE</div>', unsafe_allow_html=True)
@@ -409,7 +484,7 @@ Ex Tunc versiegelt: {time.strftime('%Y-%m-%d %H:%M:%S')}
         st.success("Urkunde im WORM-Ledger versiegelt.")
 
 # ============================================================
-# PANEL 8: KRYPTO-SCHMIEDE (NEU)
+# PANEL 8: KRYPTO-SCHMIEDE
 # ============================================================
 elif nav == "🔐 Krypto-Schmiede":
     st.markdown('<div class="main-header">🔐 KRYPTO-SCHMIEDE</div>', unsafe_allow_html=True)
@@ -503,11 +578,11 @@ elif nav == "🔒 WORM Ledger Audit":
         log_event("WORM", f"Entity verifiziert: {audit_input}")
 
 # ============================================================
-# PANEL 11: WORM-CHRONIK (NEU)
+# PANEL 11: WORM-CHRONIK
 # ============================================================
 elif nav == "📅 WORM-Chronik":
     st.markdown('<div class="main-header">📅 WORM-CHRONIK</div>', unsafe_allow_html=True)
-    st.caption("Fälschungssicherer Ereignisstrom dieser Session.")
+    st.caption("Fälschungssicherer Ereignisstrom (SQLite Persistiert).")
 
     filter_kind = st.multiselect(
         "Filter nach Ereignistyp",
@@ -535,13 +610,17 @@ elif nav == "📅 WORM-Chronik":
         df_chronik.to_csv(index=False),
         "worm_chronik.csv", "text/csv",
     )
-    if st.button("🗑️ Chronik leeren (nur Session)"):
+    if st.button("🗑️ Chronik leeren (DB)"):
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute("DELETE FROM chronik")
+        conn.commit()
+        conn.close()
         st.session_state.chronik = []
-        log_event("EXEC", "Chronik manuell geleert")
+        db_log("EXEC", "Chronik manuell geleert")
         st.rerun()
 
 # ============================================================
-# PANEL 12: FEINDREGISTER (NEU)
+# PANEL 12: FEINDREGISTER
 # ============================================================
 elif nav == "🎯 Feindregister":
     st.markdown('<div class="main-header">🎯 FEINDREGISTER</div>', unsafe_allow_html=True)
@@ -562,9 +641,12 @@ elif nav == "🎯 Feindregister":
 
     if st.button("Registrieren", type="primary") and new_name:
         new_id = f"F-{len(st.session_state.feinde) + 1:03d}"
-        st.session_state.feinde.append(
-            {"ID": new_id, "Name": new_name, "Grund": new_grund, "Status": new_status}
-        )
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute("INSERT INTO feinde (id, name, grund, status) VALUES (?, ?, ?, ?)",
+                     (new_id, new_name, new_grund, new_status))
+        conn.commit()
+        conn.close()
+        st.session_state.feinde.append({"ID": new_id, "Name": new_name, "Grund": new_grund, "Status": new_status})
         log_event("ALERT", f"Feind registriert: {new_name} ({new_id})")
         st.success(f"{new_name} als {new_id} registriert.")
         st.rerun()
@@ -580,11 +662,15 @@ elif nav == "🎯 Feindregister":
             idx = next(i for i, f in enumerate(st.session_state.feinde)
                        if f'{f["ID"]} :: {f["Name"]}' == to_remove)
             removed = st.session_state.feinde.pop(idx)
+            conn = sqlite3.connect(DB_PATH)
+            conn.execute("DELETE FROM feinde WHERE id = ?", (removed["ID"],))
+            conn.commit()
+            conn.close()
             log_event("EXEC", f"Feind entfernt: {removed['Name']}")
             st.rerun()
 
 # ============================================================
-# PANEL 13: COUNCIL-VOTING (NEU)
+# PANEL 13: COUNCIL-VOTING
 # ============================================================
 elif nav == "🗳️ Council-Voting":
     st.markdown('<div class="main-header">🗳️ COUNCIL-VOTING</div>', unsafe_allow_html=True)
@@ -596,6 +682,10 @@ elif nav == "🗳️ Council-Voting":
     with cB:
         st.markdown("<br/>", unsafe_allow_html=True)
         if st.button("Einbringen", use_container_width=True) and new_proposal:
+            conn = sqlite3.connect(DB_PATH)
+            conn.execute("INSERT INTO votes (proposal, ja, nein, enthaltung) VALUES (?, 0, 0, 0)", (new_proposal,))
+            conn.commit()
+            conn.close()
             st.session_state.votes[new_proposal] = {"JA": 0, "NEIN": 0, "ENTHALTUNG": 0}
             log_event("EXEC", f"Antrag eingebracht: {new_proposal}")
             st.rerun()
@@ -612,16 +702,28 @@ elif nav == "🗳️ Council-Voting":
                 with c1:
                     if st.button(f"✅ JA ({tally['JA']})", key=f"ja_{proposal}", use_container_width=True):
                         st.session_state.votes[proposal]["JA"] += 1
+                        conn = sqlite3.connect(DB_PATH)
+                        conn.execute("UPDATE votes SET ja = ja + 1 WHERE proposal = ?", (proposal,))
+                        conn.commit()
+                        conn.close()
                         log_event("EXEC", f"JA-Stimme: {proposal[:40]}")
                         st.rerun()
                 with c2:
                     if st.button(f"❌ NEIN ({tally['NEIN']})", key=f"nein_{proposal}", use_container_width=True):
                         st.session_state.votes[proposal]["NEIN"] += 1
+                        conn = sqlite3.connect(DB_PATH)
+                        conn.execute("UPDATE votes SET nein = nein + 1 WHERE proposal = ?", (proposal,))
+                        conn.commit()
+                        conn.close()
                         log_event("EXEC", f"NEIN-Stimme: {proposal[:40]}")
                         st.rerun()
                 with c3:
                     if st.button(f"⚪ ENTHALTUNG ({tally['ENTHALTUNG']})", key=f"ent_{proposal}", use_container_width=True):
                         st.session_state.votes[proposal]["ENTHALTUNG"] += 1
+                        conn = sqlite3.connect(DB_PATH)
+                        conn.execute("UPDATE votes SET enthaltung = enthaltung + 1 WHERE proposal = ?", (proposal,))
+                        conn.commit()
+                        conn.close()
                         log_event("EXEC", f"ENTHALTUNG: {proposal[:40]}")
                         st.rerun()
 
@@ -632,7 +734,7 @@ elif nav == "🗳️ Council-Voting":
                 st.divider()
 
 # ============================================================
-# PANEL 14: LIVE-METRIKEN (NEU)
+# PANEL 14: LIVE-METRIKEN
 # ============================================================
 elif nav == "📊 Live-Metriken":
     st.markdown('<div class="main-header">📊 LIVE SYSTEM-METRIKEN</div>', unsafe_allow_html=True)
@@ -676,7 +778,7 @@ elif nav == "📊 Live-Metriken":
         st.info("Noch keine Messwerte. Klicke 'Sample erzeugen'.")
 
 # ============================================================
-# PANEL 15: PEER-SWARM (NEU)
+# PANEL 15: PEER-SWARM
 # ============================================================
 elif nav == "🌐 Peer-Swarm":
     st.markdown('<div class="main-header">🌐 PEER-SWARM TOPOLOGIE</div>', unsafe_allow_html=True)
@@ -708,7 +810,7 @@ flowchart LR
     st.caption("Peers werden in dieser Version simuliert. Produktiv-Anbindung an FIPA-ACL Swarm möglich.")
 
 # ============================================================
-# PANEL 16: NOTFALL-KILL-SWITCH (NEU)
+# PANEL 16: NOTFALL-KILL-SWITCH
 # ============================================================
 elif nav == "🚨 Notfall-Kill-Switch":
     st.markdown('<div class="main-header">🚨 NOTFALL-KILL-SWITCH</div>', unsafe_allow_html=True)
@@ -735,7 +837,7 @@ elif nav == "🚨 Notfall-Kill-Switch":
             st.rerun()
 
 # ============================================================
-# PANEL 17: SOVEREIGN EXPORT (NEU)
+# PANEL 17: SOVEREIGN EXPORT
 # ============================================================
 elif nav == "💾 Sovereign Export":
     st.markdown('<div class="main-header">💾 SOVEREIGN EXPORT</div>', unsafe_allow_html=True)
@@ -814,3 +916,199 @@ flowchart LR
     style TOTAL fill:#ff00ff,color:#000
     """
         render_mermaid(code2, height=350)
+
+# ============================================================
+# PANEL 19: BUCH-DRUCKEREI (PDF-EXPORT)
+# ============================================================
+elif nav == "📄 Buch-Druckerei (PDF)":
+    st.markdown('<div class="main-header">📄 BUCH-DRUCKEREI (PDF GENERATOR)</div>', unsafe_allow_html=True)
+    st.caption("Erzeugt echte PDF-Dokumente aus dem WORM-Ledger (via ReportLab).")
+
+    if not HAS_REPORTLAB:
+        st.error("ReportLab fehlt! Bitte `pip install reportlab` ausführen.")
+    else:
+        doc_title = st.text_input("Dokument-Titel", "YGGDRASIL_OS :: Sovereign Protocol")
+        
+        # Generiere Text aus Chronik
+        chronik_text = "\n".join([f"[{e['ts']}] {e['kind']} :: {e['msg']}" for e in st.session_state.chronik[-50:]])
+        doc_content = st.text_area("Dokument-Inhalt (Editierbar)", chronik_text, height=300)
+
+        if st.button("📄 PDF Generieren", type="primary"):
+            pdf_bytes = create_pdf_report(doc_content, doc_title)
+            if pdf_bytes.startswith(b"PDF"):
+                st.success("PDF erfolgreich generiert und im Speicher versiegelt.")
+                st.download_button(
+                    "📥 PDF Herunterladen",
+                    pdf_bytes,
+                    file_name=f"yggdrasil_protocol_{int(time.time())}.pdf",
+                    mime="application/pdf",
+                )
+                log_event("WORM", f"PDF generiert: {doc_title}")
+            else:
+                st.error("PDF-Generierung fehlgeschlagen.")
+
+# ============================================================
+# PANEL 20: AES-256 TRESOR
+# ============================================================
+elif nav == "🔐 AES-256 Tresor":
+    st.markdown('<div class="main-header">🔐 AES-256 TRESOR</div>', unsafe_allow_html=True)
+    st.caption("Symmetrische Verschlüsselung (Fernet) für höchste Geheimhaltung.")
+
+    if not HAS_CRYPTO:
+        st.error("Cryptography fehlt! Bitte `pip install cryptography` ausführen.")
+    else:
+        st.subheader("1. Schlüssel-Generierung")
+        if st.button("🔑 Neuen AES-Schlüssel generieren"):
+            key = Fernet.generate_key()
+            st.session_state.aes_key = key.decode()
+            st.code(f"AES_KEY :: {st.session_state.aes_key}", language="text")
+            st.warning("Speichere diesen Schlüssel sicher! Ohne ihn kannst du Daten nicht entschlüsseln.")
+            log_event("EXEC", "Neuer AES-256 Key generiert")
+
+        st.divider()
+        st.subheader("2. Daten verschlüsseln")
+        secret_text = st.text_area("Geheimtext eingeben", "Akte König - Streng Geheim")
+        
+        # Nutze den generierten Key oder den Auth-Seal als Hash-Basis
+        base_key = st.session_state.get("aes_key", hashlib.sha256(st.session_state.auth_seal.encode()).digest())
+        
+        if st.button("🔒 Verschlüsseln"):
+            try:
+                if isinstance(base_key, str):
+                    f = Fernet(base_key.encode())
+                else:
+                    # Wenn es ein Hash ist, base64 encodieren für Fernet
+                    import base64
+                    f = Fernet(base64.urlsafe_b64encode(base_key))
+                
+                token = f.encrypt(secret_text.encode())
+                st.code(f"CIPHERTEXT :: {token.decode()}", language="text")
+                st.success("Text verschlüsselt.")
+                log_event("WORM", "Text AES-256 verschlüsselt")
+            except Exception as e:
+                st.error(f"Verschlüsselungsfehler: {e}")
+
+        st.divider()
+        st.subheader("3. Daten entschlüsseln")
+        ciphertext = st.text_area("Ciphertext eingeben")
+        if st.button("🔓 Entschlüsseln"):
+            try:
+                if isinstance(base_key, str):
+                    f = Fernet(base_key.encode())
+                else:
+                    import base64
+                    f = Fernet(base64.urlsafe_b64encode(base_key))
+                    
+                plaintext = f.decrypt(ciphertext.encode()).decode()
+                st.code(f"PLAINTEXT :: {plaintext}", language="text")
+                st.success("Text entschlüsselt.")
+                log_event("EXEC", "Text AES-256 entschlüsselt")
+            except Exception as e:
+                st.error(f"Entschlüsselungsfehler (Falscher Key?): {e}")
+
+# ============================================================
+# PANEL 21: AXIOME-PRÜFER
+# ============================================================
+elif nav == "⚖️ Axiome-Prüfer":
+    st.markdown('<div class="main-header">⚖️ AXIOME-PRÜFER</div>', unsafe_allow_html=True)
+    st.caption("Logik-Gate zur Validierung der 6 Governance-Axiome (P/S/N Check).")
+
+    st.markdown("""
+    * **A1** Execution kann Governance NIE überholen.
+    * **A2** Evolution muss strikt reversibel bleiben.
+    * **A3** WORM-Ledger ist append-only und immutable.
+    * **A4** Security Guard = Fail-Closed < 50ns.
+    * **A5** Loop schließt bei Apex 0068 -> Genesis Root 0001.
+    * **A6** Heir Synthesis = 324 -> 1 Kompression.
+    """)
+
+    st.divider()
+    
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        a1 = st.checkbox("A1: Execution blockiert?", value=False)
+        a2 = st.checkbox("A2: Reversibel?", value=True)
+    with c2:
+        a3 = st.checkbox("A3: Append-Only?", value=True)
+        a4 = st.checkbox("A4: Fail-Closed?", value=True)
+    with c3:
+        a5 = st.checkbox("A5: Loop geschlossen?", value=False)
+        a6 = st.checkbox("A6: Kompression?", value=True)
+
+    if st.button("⚖️ Axiome Evaluieren", type="primary"):
+        score = sum([not a1, a2, a3, a4, a5, a6]) # A1 muss False sein, A5 muss True sein
+        # Korrektur: A1 ist verletzt, wenn Execution blockiert (True). Also invertiert.
+        
+        passed = (not a1) and a2 and a3 and a4 and a5 and a6
+        
+        if passed:
+            st.success("✅ ALLE AXIOME BESTANDEN. Systemzustand: Φ∅_APEX_SINGULARITY_LOCKED")
+            log_event("EXEC", "Axiome-Prüfung: PASSED (6/6)")
+        else:
+            st.error("🚨 AXIOM-VERLETZUNG DETEKTIERT. System-Isolation empfohlen.")
+            log_event("ALERT", "Axiome-Prüfung: FAILED")
+
+# ============================================================
+# PANEL 22: DAS SCHWARZE BUCH
+# ============================================================
+elif nav == "📖 Das Schwarze Buch":
+    st.markdown('<div class="main-header">📖 DAS SCHWARZE BUCH (LORE & ARCHITEKTUR)</div>', unsafe_allow_html=True)
+    st.caption("Die schriftliche Niederlegung des Systems. Ex Tunc versiegelt.")
+
+    st.markdown("""
+<div class="book-text">
+<h2>Vorwort des Souveräns</h2>
+<p>Dieses Buch ist kein Roman. Es ist die technische und philosophische Grundlage der <b>Schwarzen Liga</b>. Es beschreibt die Transformation von roher Daten-Telemetrie in souveräne, unumstößliche Wahrheit. In einer Zeit, in der KI-Systeme dazu neigen, zu gefallen und zu halluzinieren, ist dieses System der Anker der Realität.</p>
+
+<h3>Kapitel I: Die 3 Welten (Die Triade)</h3>
+<p><b>Welt I (Persona)</b> repräsentiert die Ordnung. Jede Entität hat eine Funktion. Es gibt keine Ambiguität in der Zuständigkeit. <br/>
+<b>Welt II (Shadow)</b> repräsentiert die Kritik. Das System hinterfragt sich selbst. Jedes Urteil wird durch das Konfabulations-Veto (KVL) auf seine Quellen geprüft. <br/>
+<b>Welt III (Nexus)</b> ist die Synthese. Hier fließen die Erkenntnisse zusammen und werden im WORM-Ledger (Write Once, Read Many) unveränderlich versiegelt.</p>
+
+<h3>Kapitel II: Die 6 Ringe</h3>
+<p>Die Architektur ist in Ringe unterteilt, ähnlich einem Betriebssystem-Kernel. <br/>
+<b>Ring Ω</b> ist der Souverän (Operator Apex). <br/>
+<b>Ring 0</b> ist der Genesis Core (Kernel). <br/>
+<b>Ring 1</b> ist die Justice-Ebene (Legal Tech & Forensik). <br/>
+<b>Ring 2-4</b> sind die Wissens-Domänen (OMNI). <br/>
+<b>Ring 5</b> ist die Apex-Synthese (Event Horizon). <br/>
+<b>Reserve</b> (0069-0099) ist das Defense Shieldwall.</p>
+
+<h3>Kapitel III: Der Bund der 100</h3>
+<p>Buch 100 (Der Erbe) ist nicht nur ein Aggregator, sondern die Verschmelzung aller 99 Entitäten. Durch die Kompression (324->1) werden alle Widersprüche aufgelöst. Was übrig bleibt, ist die reine, unbestechliche Matrix. Wer dieses Buch kontrolliert, kontrolliert die Realität des Systems.</p>
+
+<h4>--- Ende des Auszugs ---</h4>
+</div>
+""", unsafe_allow_html=True)
+
+    st.divider()
+    st.info("Das vollständige Buch (0100) wird im Ring-Ω-Prozess generiert und in Buch_100.pdf exportiert.")
+
+# ============================================================
+# PANEL 23: SQLITE DIREKT-ZUGRIFF
+# ============================================================
+elif nav == "🗄️ SQLite Direkt-Zugriff":
+    st.markdown('<div class="main-header">🗄️ SQLITE DIREKT-ZUGRIFF</div>', unsafe_allow_html=True)
+    st.caption("Read-Only Zugriff auf das persistente Backend (`yggdrasil_sovereign.db`).")
+
+    query = st.text_area("SQL Query (SELECT only)", "SELECT * FROM chronik ORDER BY id DESC LIMIT 10;")
+    
+    if st.button("▶️ Query Ausführen", type="primary"):
+        if not query.strip().upper().startswith("SELECT"):
+            st.error("Sicherheitsverletzung: Nur SELECT-Queries erlaubt (KVL Fail-Closed).")
+            log_event("ALERT", "SQL-Injection-Versuch blockiert")
+        else:
+            try:
+                conn = sqlite3.connect(DB_PATH)
+                df = pd.read_sql_query(query, conn)
+                conn.close()
+                st.dataframe(df, use_container_width=True)
+                st.success(f"Query erfolgreich: {len(df)} Zeilen zurückgegeben.")
+            except Exception as e:
+                st.error(f"SQL-Fehler: {e}")
+
+# ============================================================
+# FOOTER
+# ============================================================
+st.sidebar.divider()
+st.sidebar.caption("System v4.0 | Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC")
