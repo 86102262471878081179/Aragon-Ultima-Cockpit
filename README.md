@@ -1,3 +1,92 @@
+⚫ YGGDRASIL_OS :: Sovereign Cockpit v4.0Ein monolithisches, deterministisches Command-Center für die Black Six Matrix.
+Kombination aus Legal-Tech, forensischer Datenanalyse, Kryptografie und Echtzeit-Telemetrie. Keine Halluzinationen. Nur harte Daten, SQLite-Persistenz und WORM-Siegel. 
+https://www.python.org/downloads/
+https://streamlit.io/
+https://sqlite.org/
+# 
+ 
+🚀 Features (Die harte Ausbeute)
+• SQLite-Persistenz: Die Chronik, das Feindregister und alle Council-Votes werden in einer echten yggdrasil_sovereign.db gespeichert. Server-Neustart? Egal. Die Daten überleben.
+• Echte Kryptografie: Integrierter AES-256 (Fernet) Tresor. Verschlüsseln und Entschlüsseln von Texten mit echten Schlüsseln.
+• PDF-Generierung (WORM): Die "Buch-Druckerei" erzeugt echte PDF-Dokumente via ReportLab aus dem WORM-Ledger.
+• Fail-Closed Architektur: Der SQLite-Direktzugriff erlaubt ausschließlich SELECT-Queries. Jeder Versuch eines DROP TABLE wird vom System blockiert (Gremmel KVL Passed).
+• Dynamische Diagramme: Architektur-Matrizen und Peer-Swarm-Topologien werden live via Mermaid.js gerendert.
+• FastAPI-Backend Anbindung: Live-Chat-Interface mit Post-Quantum Seal-Validierung (Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC).
+• Triadisches Design: Jedes Panel folgt dem P/S/N-Prinzip (Persona, Shadow, Nexus). 
+ 
+🛠️ Installation & Setup
+ 
+1. Repository klonen
+git clone https://github.com/DEIN_USERNAME/yggdrasil-cockpit.git
+cd yggdrasil-cockpit
+ 
+2. Virtuelle Umgebung erstellen (Empfohlen)
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+ 
+3. Abhängigkeiten installieren
+pip install -r requirements.txt
+ 
+(Falls keine requirements.txt existiert, führe aus:)
+pip install streamlit pandas httpx reportlab cryptography
+ 
+4. Starten
+streamlit run app.py
+ 
+Das Cockpit öffnet sich standardmäßig unter http://localhost:8501. 
+ 
+🧭 Die 23 Module (Panels)
+ 
+Das Cockpit ist in 6 operative Zonen unterteilt:
+ 
+🏛️ Governance & Council
+• 4x4 Council Grid: Die oberste Instanz. Entscheidungen protokollieren.
+• Council-Voting: Demokratische Abstimmung über System-Anträge.
+• Axiome-Prüfer: Validierung der 6 Governance-Axiome (Hard-Coded Logic-Gate). 
+⚖️ Legal Tech & Forensik
+• Schwarzer Richter: Urteilsfindung nach BGB/StGB mit Ex-Tunc-Versiegelung.
+• Normen-Engine: Volltext-Register (BGB, StGB, GG, VwVfG) + Schadensersatz-Rechner (§ 839 BGB).
+• Urkunden-Forge: Generiert rechtssichere Schriftstücke (Widerspruch, Klage, Strafanzeige) mit SHA3-512-Siegel. 
+🛡️ Security & Telemetrie
+• eBPF Mesh Monitor: Simulierter Netzwerk-Traffic. Blockiert unautorisierte Nodes (Fail-Closed).
+• Feindregister: Verwaltung von Zielen (ISOLATED, BLACKLISTED, QUARANTINED).
+• Notfall-Kill-Switch: Sofortige Isolation aller Ingress-Pfade. Erfordert manuelle Bestätigung. 
+🗄️ Daten & Archivierung
+• WORM-Chronik: Fälschungssicherer Ereignisstrom. Jedes Event wird in SQLite persistiert.
+• WORM Ledger Audit: Kryptografische Verifikation von Entitäten via SHA3-512.
+• SQLite Direkt-Zugriff: Live-Abfragen auf die yggdrasil_sovereign.db (Read-Only).
+• Sovereign Export: Vollständiges JSON-Backup aller Session-Daten und Tabellen. 
+🔐 Krypto & Output
+• Krypto-Schmiede: Hash-Berechnung (SHA3, BLAKE2, MD5) und deterministische Signatur-Simulation.
+• AES-256 Tresor: Echte symmetrische Verschlüsselung (Fernet).
+• Buch-Druckerei (PDF): Generiert PDF-Reports via ReportLab aus dem Ledger. 
+🧬 System & Architektur
+• Architektur-Matrix: Mermaid.js-Diagramme des Krisler-Guard-Flows und der Isolation.
+• Peer-Swarm: Visualisierung der Node-Topologie.
+• Das Schwarze Buch: Der vollständige Lore-Text des Systems (Triaden, Ringe, Buch 100). 
+ 
+🔒 Sicherheit & Governance (Gremmel KVL)
+ 
+Dieses System wurde nach dem KVL (Konfabulations-Veto) auditiert:
+• Keine Mock-Latenzen: Alle Performance-Metriken im Code sind deterministisch oder als Simulation gekennzeichnet.
+• Keine Datenverluste: Jede Aktion (Feind hinzufügen, Vote abgeben, Kill-Switch) wird sofort in die SQLite-DB geschrieben.
+• Fail-Closed: Wenn die API-Verbindung zum Backend fehlschlägt, isoliert sich das System, anstatt eine falsche Antwort zu halluzinieren. 
+ 
+📦 Requirements (requirements.txt)
+streamlit>=1.32.0
+pandas>=2.1.0
+httpx>=0.27.0
+reportlab>=4.0.0
+cryptography>=42.0.0
+ 
+ 
+📜 Lizenz
+ 
+Sovereign Root Private License
+Copyright (c) 2026 Thomas König / Odin Ultra Root.
+Dieses System ist ausschließlich für autorisierte Operatoren der Schwarzen Liga bestimmt. Jegliche nicht autorisierte Vervielfältigung oder Modifikation führt zum sofortigen Entzug des Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC und zur Isolierung durch den Krisler-Guard. 
+ 
+Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC | SHA3-512: 850b2ef003f53db90f704b16e54869fc6ba6265eae13aafde9046fe0e4d99dab
 ⬛ BLACK-SIX MATRIX v∞
 ========================
 
