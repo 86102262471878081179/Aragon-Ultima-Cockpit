@@ -179,6 +179,9 @@ nav = st.sidebar.radio("NAVIGATION", [
     "🌐 Peer-Swarm",
     "🚨 Notfall-Kill-Switch",
     "💾 Sovereign Export",
+    "📖 L.S.S. Codex",
+    "🧠 DeepSeek Booster",     # <-- NEU
+    "👻 King_Ghost Vault",     # <-- NEU
     "🧬 Architektur-Matrix",
 ])
 
