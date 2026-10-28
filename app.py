@@ -130,8 +130,7 @@ def check_backend():
 # ============================================================
 # 4. SIDEBAR (MIT BILD)
 # ============================================================
-if os.path.exists("council.jpg"):
-    st.sidebar.image("council.jpg", use_column_width=True)
+https://github.com/86102262471878081179/Aragon-Ultima-Cockpit/blob/main/council.jpg
 else:
     st.sidebar.warning("⚠️ 'council.jpg' nicht im Ordner. Bild fehlt.")
 
