@@ -133,8 +133,7 @@ def check_backend():
 COUNCIL_IMG_URL = "https://raw.githubusercontent.com/86102262471878081179/Aragon-Ultima-Cockpit/main/council.jpg"
 st.sidebar.image(COUNCIL_IMG_URL, use_container_width=True)
 else:
-    st.sidebar.warning("⚠️ 'council.jpg' nicht im Ordner. Bild fehlt.")
-
+    
 st.sidebar.title("BLUE CORE")
 st.sidebar.markdown("**Authority**: Odin Ultra Root")
 st.sidebar.markdown("**Kernel**: Schwarzer Punkt")
