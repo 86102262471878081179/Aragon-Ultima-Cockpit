@@ -856,13 +856,27 @@ elif nav == "🎯 Feindregister":
         st.rerun()
 
 # ============================================================
-# PANEL 14: COUNCIL-VOTING
+# PANEL 13: COUNCIL-VOTING
 # ============================================================
 elif nav == "🗳️ Council-Voting":
-    if st.button("Einbringen", use_container_width=True) and new_proposal:
+    st.markdown('<div class="main-header">🗳️ COUNCIL-VOTING</div>', unsafe_allow_html=True)
+    
+    st.subheader("➕ Neuen Antrag einbringen")
+    cA, cB = st.columns([3, 1])
+    
+    with cA:
+        new_proposal = st.text_input("Antrag", placeholder="z.B. Buch 100 als Singularität ratifizieren")
+        
+    with cB:
+        st.markdown("<br/>", unsafe_allow_html=True)
+        
+        # Der Button mit dem neuen width="stretch" (statt use_container_width)
+        if st.button("Einbringen", width="stretch") and new_proposal:
+            
+            # 1. SQLite Datenbank mit Fehlerbehandlung (Try-Except) füttern
             try:
                 conn = sqlite3.connect(DB_PATH, timeout=10)
-                # INSERT OR IGNORE verhindert den UNIQUE-Fehler, wenn der Antrag schon existiert
+                # INSERT OR IGNORE verhindert den UNIQUE-Fehler bei Doppelklick
                 conn.execute(
                     "INSERT OR IGNORE INTO votes (proposal, ja, nein, enthalten) VALUES (?, 0, 0, 0)", 
                     (new_proposal,)
@@ -873,12 +887,44 @@ elif nav == "🗳️ Council-Voting":
                 st.error(f"DB blockiert: {e}")
             except Exception as e:
                 st.error(f"DB Fehler: {e}")
-                
-            # Session State aktualisieren (falls noch nicht da)
+
+            # 2. Session State aktualisieren (für die sofortige UI-Anzeige)
             if new_proposal not in st.session_state.votes:
                 st.session_state.votes[new_proposal] = {"JA": 0, "NEIN": 0, "ENTHALTUNG": 0}
                 log_event("EXEC", f"Antrag eingebracht: {new_proposal}")
+            
+            # 3. Die Seite neu laden, damit der Antrag angezeigt wird
             st.rerun()
+
+    st.divider()
+    
+    # Anzeige der aktiven Anträge
+    if not st.session_state.votes:
+        st.info("Keine Anträge. Bringe den ersten ein.")
+    else:
+        for proposal, tally in list(st.session_state.votes.items()):
+            with st.container():
+                st.markdown(f"### 📜 {proposal}")
+                c1, c2, c3 = st.columns(3)
+                
+                with c1:
+                    if st.button(f"✅ JA ({tally['JA']})", key=f"ja_{proposal}", width="stretch"):
+                        st.session_state.votes[proposal]["JA"] += 1
+                        st.rerun()
+                with c2:
+                    if st.button(f"❌ NEIN ({tally['NEIN']})", key=f"nein_{proposal}", width="stretch"):
+                        st.session_state.votes[proposal]["NEIN"] += 1
+                        st.rerun()
+                with c3:
+                    if st.button(f"⚪ ENTHALTUNG ({tally['ENTHALTUNG']})", key=f"ent_{proposal}", width="stretch"):
+                        st.session_state.votes[proposal]["ENTHALTUNG"] += 1
+                        st.rerun()
+                        
+                total = sum(tally.values())
+                if total > 0:
+                    ja_pct = (tally["JA"] / total) * 100
+                    st.progress(ja_pct / 100, text=f"{ja_pct:.1f}% Zustimmung ({total} Stimmen)")
+                st.divider()
             
     st.divider()
     
