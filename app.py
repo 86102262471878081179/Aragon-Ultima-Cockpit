@@ -859,17 +859,25 @@ elif nav == "🎯 Feindregister":
 # PANEL 14: COUNCIL-VOTING
 # ============================================================
 elif nav == "🗳️ Council-Voting":
-    st.markdown('<div class="main-header">🗳️ COUNCIL-VOTING</div>', unsafe_allow_html=True)
-    
-    st.subheader("➕ Neuen Antrag einbringen")
-    cA, cB = st.columns([3, 1])
-    with cA:
-        new_proposal = st.text_input("Antrag", placeholder="z.B. Buch 100 als Singularität ratifizieren")
-    with cB:
-        st.markdown("<br/>", unsafe_allow_html=True)
-        if st.button("Einbringen", use_container_width=True) and new_proposal:
-            st.session_state.votes[new_proposal] = {"JA": 0, "NEIN": 0, "ENTHALTUNG": 0}
-            log_event("EXEC", f"Antrag eingebracht: {new_proposal}")
+    if st.button("Einbringen", use_container_width=True) and new_proposal:
+            try:
+                conn = sqlite3.connect(DB_PATH, timeout=10)
+                # INSERT OR IGNORE verhindert den UNIQUE-Fehler, wenn der Antrag schon existiert
+                conn.execute(
+                    "INSERT OR IGNORE INTO votes (proposal, ja, nein, enthalten) VALUES (?, 0, 0, 0)", 
+                    (new_proposal,)
+                )
+                conn.commit()
+                conn.close()
+            except sqlite3.OperationalError as e:
+                st.error(f"DB blockiert: {e}")
+            except Exception as e:
+                st.error(f"DB Fehler: {e}")
+                
+            # Session State aktualisieren (falls noch nicht da)
+            if new_proposal not in st.session_state.votes:
+                st.session_state.votes[new_proposal] = {"JA": 0, "NEIN": 0, "ENTHALTUNG": 0}
+                log_event("EXEC", f"Antrag eingebracht: {new_proposal}")
             st.rerun()
             
     st.divider()
