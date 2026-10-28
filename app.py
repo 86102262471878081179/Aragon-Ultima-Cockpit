@@ -130,7 +130,8 @@ def check_backend():
 # ============================================================
 # 4. SIDEBAR (MIT BILD)
 # ============================================================
-https://github.com/86102262471878081179/Aragon-Ultima-Cockpit/blob/main/council.jpg
+COUNCIL_IMG_URL = "https://raw.githubusercontent.com/86102262471878081179/Aragon-Ultima-Cockpit/main/council.jpg"
+st.sidebar.image(COUNCIL_IMG_URL, use_container_width=True)
 else:
     st.sidebar.warning("⚠️ 'council.jpg' nicht im Ordner. Bild fehlt.")
 
