@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 import json
 import time
 import hashlib
@@ -50,7 +51,9 @@ st.markdown("""
 # 2. SESSION STATE
 # ============================================================
 if "auth_seal" not in st.session_state:
-    st.session_state.auth_seal = "Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC"
+    st.session_state.auth_seal = os.getenv(
+        "YGGDRASIL_SEAL", "Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC"
+    )
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "chronik" not in st.session_state:
@@ -59,7 +62,6 @@ if "chronik" not in st.session_state:
          "msg": "KERNEL_INIT :: YGGDRASIL_OS v3 online"}
     ]
 if "feinde" not in st.session_state:
-    # GRUMMEL-PAYLOAD statt GFW/Gremmel
     st.session_state.feinde = [
         {"ID": "F-001", "Name": "Amtsträger X", "Grund": "Amtsmissbrauch § 339 StGB", "Status": "ISOLATED"},
         {"ID": "F-002", "Name": "König der Lüge", "Grund": "Hochverrat a.D.", "Status": "BLACKLISTED"},
@@ -178,7 +180,7 @@ elif nav == "💀 Der schwarze Richter":
                 f'<p><strong>Sachverhalt:</strong> {case_input}</p>'
                 f'<p><strong>Zuständiger Richter:</strong> Node 0028</p>'
                 f'<p><strong>Geprüfte Normen:</strong> § 839 BGB, § 339 StGB, Art. 19 Abs. 4 GG</p>'
-                f'<p><strong>WORM-Hash:</strong> {hashlib.sha256(case_input.encode()).hexdigest()[:32]}...</p>'
+                f'<p><strong>WORM-Hash:</strong> {hashlib.sha3_512(case_input.encode()).hexdigest()[:32]}...</p>'
                 f'<p><strong>Status:</strong> 💀 DROP_AND_ISOLATE FÜR BEKLAGTEN 💀</p>'
                 f'</div>',
                 unsafe_allow_html=True,
@@ -234,7 +236,7 @@ elif nav == "⚖️ Normen-Engine":
             st.success("Berechnung verewigt.")
 
 # ============================================================
-# PANEL 5: API LIVE INTERFACE
+# PANEL 5: API LIVE INTERFACE (Kritischer Fix)
 # ============================================================
 elif nav == "⚡ API Live Interface":
     st.markdown('<div class="main-header">⚡ API COMMAND CENTER ⚡</div>', unsafe_allow_html=True)
@@ -252,16 +254,34 @@ elif nav == "⚡ API Live Interface":
                     try:
                         api_url = "https://aragon-backend-api.onrender.com/prompt/check"
                         payload = {"prompt": prompt, "auth_seal": st.session_state.auth_seal}
-                        response = httpx.post(api_url, json=payload, timeout=60.0)
+                        response = httpx.post(api_url, json=payload, timeout=30.0)
                         if response.status_code == 200:
                             data = response.json()
-                            if data.get("status") == "200_OK_ALLOW":
-                                ai_ans = data.get("data", {}).get("ai_answer", "Keine KI-Antwort.")
+                            status = data.get("status", "")
+                            # NEU: akzeptiert altes ("200_OK") UND neues ("200_OK_ALLOW") Format
+                            if status in ("200_OK", "200_OK_ALLOW"):
+                                ai_ans = (
+                                    data.get("data", {}).get("ai_answer")
+                                    or data.get("ai_answer")
+                                    or "Keine KI-Antwort."
+                                )
                                 st.markdown(f"**KI-Antwort:**\n{ai_ans}")
-                                st.session_state.messages.append({"role": "assistant", "content": ai_ans})
-                                log_event("INGRESS", f"Chat-Prompt beantwortet")
+                                # NEU: RAG-Match + WORM-Block als Kontext
+                                matched = data.get("data", {}).get("entities_matched") or []
+                                if matched:
+                                    st.caption(f"🎯 RAG-Match: {', '.join(matched[:8])}")
+                                worm = data.get("worm", {})
+                                if worm:
+                                    st.caption(
+                                        f"🔒 WORM Block #{worm.get('block')} · "
+                                        f"{str(worm.get('hash', ''))[:16]}…"
+                                    )
+                                st.session_state.messages.append(
+                                    {"role": "assistant", "content": ai_ans}
+                                )
+                                log_event("INGRESS", "Chat-Prompt beantwortet")
                             else:
-                                st.error(f"Fail-Closed! {data.get('detail')}")
+                                st.error(f"Fail-Closed! {data.get('detail', 'unbekannt')}")
                         else:
                             st.error(f"API Error: {response.status_code}")
                     except Exception as e:
