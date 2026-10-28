@@ -1064,6 +1064,61 @@ elif nav == "👻 King_Ghost Vault":
         except Exception as e:
             st.error(f"Verbindungsfehler: {e}")
 
+    # ============================================================
+# PANEL 22: NOTEBOOK MANIFEST (CSV Explorer)
+# ============================================================
+elif nav == "📖 Notebook Manifest":
+    st.markdown('<div class="main-header">📖 B6-HYPERKERNEL MANIFEST</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Durchsuchbare Registry der 101 Notebooks</div>', unsafe_allow_html=True)
+
+    # Pfad zur CSV (anpassen, falls sie woanders liegt)
+    CSV_PATH = "notebooks/manifest-template.csv" 
+
+    if not os.path.exists(CSV_PATH):
+        st.error(f"⚠️ Datei nicht gefunden: `{CSV_PATH}`. Bitte stelle sicher, dass die CSV im Ordner `notebooks/` liegt.")
+    else:
+        try:
+            # CSV laden (mit Fehlerbehandlung für Pandas)
+            df = pd.read_csv(CSV_PATH, sep=",")
+            
+            # Suchfeld
+            search_query = st.text_input("🔍 Suche nach ID, Titel, Ring oder Pfad", "")
+            
+            if search_query:
+                mask = df.apply(lambda row: row.astype(str).str.contains(search_query, case=False).any(), axis=1)
+                filtered_df = df[mask]
+            else:
+                filtered_df = df
+
+            st.caption(f"**{len(filtered_df)}** von **{len(df)}** Notebooks angezeigt")
+
+            # Schöne Dataframe-Anzeige mit Suche
+            st.dataframe(
+                filtered_df,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "ID": st.column_config.TextColumn("ID", width="small"),
+                    "Titel": st.column_config.TextColumn("Titel", width="medium"),
+                    "Ring-Sektor": st.column_config.TextColumn("Ring", width="medium"),
+                    "Machtstufe": st.column_config.ProgressColumn(
+                        "Machtstufe", format="%s", min_value=0, max_value=100
+                    )
+                }
+            )
+            
+            # Download-Button
+            st.download_button(
+                "📥 Gefilterte CSV herunterladen",
+                filtered_df.to_csv(index=False),
+                "notebooks_filtered.csv",
+                "text/csv"
+            )
+
+        except pd.errors.ParserError as e:
+            st.error(f"🚨 CSV Parse-Fehler: {e}. Bitte prüfe die Trennzeichen (Komma/Semikolon) in deiner CSV.")
+        except Exception as e:
+            st.error(f"Fehler beim Laden: {e}")
     st.divider()
     st.subheader("🩸 Manuelle Konsumation (Test)")
     test_token = st.text_input("Token zum Konsumieren", "feindlicher_schatten")
