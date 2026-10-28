@@ -352,13 +352,17 @@ elif nav == "⚡ API Live Interface":
                         
                         if response.status_code == 200:
                             data = response.json()
-                            if data.get("status") == "200_OK_ALLOW":
+                            # NEU: Akzeptiert sowohl "200_OK" (neue API) als auch "200_OK_ALLOW" (alte API)
+                            status_check = data.get("status", "")
+                            if "200_OK" in status_check:
                                 ai_ans = data.get("data", {}).get("ai_answer", "Keine KI-Antwort.")
                                 st.markdown(f"**KI-Antwort:**\n{ai_ans}")
                                 st.session_state.messages.append({"role": "assistant", "content": ai_ans})
                                 log_event("INGRESS", f"Chat-Prompt beantwortet")
                             else:
-                                st.error(f"Fail-Closed! {data.get('detail')}")
+                                # Falls die API blockiert (Fail-Closed) oder einen Fehler hat
+                                st.error(f"Fail-Closed! {data.get('detail', 'Unbekannter Fehler')}")
+                                log_event("ALERT", f"API Fail-Closed: {data.get('detail')}")
                                 log_event("ALERT", f"API Fail-Closed: {data.get('detail')}")
                         else:
                             st.error(f"API Error: {response.status_code}")
