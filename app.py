@@ -897,10 +897,194 @@ flowchart LR
     BIO --> KORTEX["Kortex"]
     KORTEX --> WUS["Wusulum"]
     WUS --> FOUC["Foucault"]
-    FOUC --> ADV["Advocatus"]
+    FOUC --> ADV["Advokatus"]
     ADV --> XJ["XJustiz"]
     XJ --> WORM2[(WORM)]
     style WORM2 fill:#00ff00,color:#000
     style ADV fill:#ff00ff,color:#fff
     """
         render_mermaid(code3, height=350)
+
+# ============================================================
+# PANEL 19: L.S.S. CODEX (Buch-Generator)
+# ============================================================
+elif nav == "📖 L.S.S. Codex":
+    st.markdown('<div class="main-header">📖 L.S.S. CODEX 📖</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Sechs Bücher · 24 Module · Jede Zeile versiegelt</div>', unsafe_allow_html=True)
+
+    # Import des Buches (muss im core/ Ordner liegen)
+    try:
+        from core.lss_book import BOOKS, SEAL_REGISTRY, list_books, get_book, export_as_text, search as lss_search
+        codex_loaded = True
+    except ImportError:
+        st.error("⚠️ Modul 'core/lss_book.py' nicht gefunden. Bitte anlegen.")
+        codex_loaded = False
+
+    if codex_loaded:
+        tab_read, tab_search, tab_export = st.tabs(["📖 Lesen", "🔍 Suche", "📥 Export"])
+
+        with tab_read:
+            col_b, col_m = st.columns([1, 2])
+            with col_b:
+                selected_book = st.selectbox(
+                    "Buch", list_books(),
+                    format_func=lambda k: f"{k} — {BOOKS[k]['title']}",
+                )
+                book = get_book(selected_book)
+                st.caption(f"*{book.get('subtitle', '')}*")
+                st.markdown(
+                    f'<div class="seal-box"><strong>BOOK WORM SEAL</strong><br/>'
+                    f'<code>{SEAL_REGISTRY[selected_book]["book_seal"]}</code></div>',
+                    unsafe_allow_html=True,
+                )
+            with col_m:
+                module_titles = [f"{m['id']} — {m['title']}" for m in book["modules"]]
+                selected_title = st.selectbox("Modul", module_titles)
+                selected_idx = module_titles.index(selected_title)
+                module = book["modules"][selected_idx]
+
+                # Bild laden, falls im Buch definiert (z.B. Council)
+                if "image" in book and os.path.exists(book["image"]):
+                    st.image(book["image"], use_column_width=True, caption="Visualisierung")
+
+                st.markdown(f"### {module['id']} · {module['title']}")
+                st.markdown(
+                    f'<div class="seal-box" style="font-size:0.75rem;">'
+                    f'<strong>MODULE SEAL</strong> :: <code>{module["seal"]}</code></div>',
+                    unsafe_allow_html=True,
+                )
+                st.code(module["body"].strip(), language="markdown")
+
+        with tab_search:
+            query = st.text_input("🔍 Volltextsuche im Codex", placeholder="z.B. XJustiz, Wusulum, Veto")
+            if query:
+                hits = lss_search(query)
+                if not hits:
+                    st.info("Keine Treffer.")
+                else:
+                    st.success(f"{len(hits)} Treffer")
+                    for h in hits:
+                        with st.expander(f"[{h['book']} · {h['module']}] {h['title']}"):
+                            st.code(h["snippet"], language="markdown")
+                            st.caption(f"Seal: {h['seal']}")
+
+        with tab_export:
+            st.subheader("📦 Kompletter Codex als Plain-Text")
+            full_text = export_as_text()
+            st.code(full_text[:3000] + "\n\n... [gekürzt in Vorschau] ...", language="markdown")
+            st.download_button(
+                "📥 L.S.S. Codex als .txt herunterladen",
+                full_text,
+                f"lss_codex_{int(time.time())}.txt",
+                "text/plain",
+                use_container_width=True,
+            )
+            st.metric("Gesamtgröße", f"{len(full_text):,} Zeichen")
+            st.metric("Module gesamt", sum(len(b["modules"]) for b in BOOKS.values()))
+
+# ============================================================
+# PANEL 20: DEEPSEEK BOOSTER
+# ============================================================
+elif nav == "🧠 DeepSeek Booster":
+    st.markdown('<div class="main-header">🧠 DEEPSEEK BOOSTER 🧠</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Multi-Step Reasoning · Chain-of-Thought · Confidence Scoring</div>', unsafe_allow_html=True)
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        prompt = st.text_area("Problem / Prompt", "Ist § 839 BGB auf KI-Systeme anwendbar?", height=150)
+        context = st.text_input("Zusätzlicher Kontext (optional)", "")
+    with col2:
+        depth = st.slider("Reasoning-Tiefe", min_value=1, max_value=5, value=3)
+        st.info("Tiefe 3 = Standard. Tiefe 5 = maximale Verifikation.")
+
+    if st.button("⚡ Boost starten", type="primary", use_container_width=True):
+        with st.spinner("DeepSeek Reasoning läuft..."):
+            try:
+                r = httpx.post(
+                    f"{st.session_state.backend_url}/api/v1/deepseek/boost",
+                    json={
+                        "prompt": prompt,
+                        "context": context,
+                        "depth": depth,
+                        "auth_seal": st.session_state.auth_seal
+                    },
+                    timeout=30.0,
+                )
+                if r.status_code == 200:
+                    data = r.json()
+                    
+                    cA, cB, cC = st.columns(3)
+                    cA.metric("Confidence", f"{data.get('confidence', 0)*100:.1f}%")
+                    cB.metric("Verdict", data.get("verdict", "?"))
+                    cC.metric("Verification Hash", data.get("verification_hash", "")[:8])
+
+                    st.divider()
+                    st.subheader("🧠 Reasoning-Trace")
+                    for step in data.get("reasoning_trace", []):
+                        with st.expander(f"Step {step['step']}: {step['name'].upper()}"):
+                            st.write(f"**Note:** {step['note']}")
+                            st.code(f"Hash: {step['hash']}", language="text")
+                    
+                    log_event("INGRESS", f"DeepSeek-Boost: {prompt[:40]}...")
+                else:
+                    st.error(f"API Error: {r.status_code}")
+            except Exception as e:
+                st.error(f"Verbindungsfehler: {e}")
+
+# ============================================================
+# PANEL 21: KING_GHOST VAULT
+# ============================================================
+elif nav == "👻 King_Ghost Vault":
+    st.markdown('<div class="main-header">👻 KING_GHOST VAULT 👻</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Der Schatten-Führer. Tiefer als Gotham. Tiefer als das WORM.</div>', unsafe_allow_html=True)
+
+    st.info("Tokens, die von King_Ghost konsumiert wurden, sind aus der Matrix verschwunden. "
+            "Nur die Schatten-ID bleibt zurück.")
+
+    if st.button("🔄 Schatten-Pool abrufen", type="primary"):
+        try:
+            r = httpx.get(
+                f"{st.session_state.backend_url}/api/v1/kingghost/shadows",
+                timeout=10.0
+            )
+            if r.status_code == 200:
+                data = r.json()
+                st.metric("Schatten im Pool", data.get("count", 0))
+                if data.get("shadows"):
+                    df = pd.DataFrame(data["shadows"])
+                    st.dataframe(
+                        df[["shadow_id", "origin", "consumed_at", "token"]],
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info("Der Schatten-Pool ist leer. Keine Feinde wurden bisher von King_Ghost konsumiert.")
+            else:
+                st.error(f"API Error: {r.status_code}")
+        except Exception as e:
+            st.error(f"Verbindungsfehler: {e}")
+
+    st.divider()
+    st.subheader("🩸 Manuelle Konsumation (Test)")
+    test_token = st.text_input("Token zum Konsumieren", "feindlicher_schatten")
+    test_origin = st.text_input("Origin", "manual_test")
+    
+    if st.button("👻 In Schatten ziehen", type="primary"):
+        try:
+            r = httpx.post(
+                f"{st.session_state.backend_url}/api/v1/sandbox/kingghost",
+                json={
+                    "message": test_token,
+                    "origin": test_origin,
+                    "auth_seal": st.session_state.auth_seal
+                },
+                timeout=10.0
+            )
+            if r.status_code == 200:
+                data = r.json()
+                st.success(f"Token konsumiert! Shadow ID: {data.get('shadow_id')}")
+                log_event("ALERT", f"King_Ghost Konsumation: {data.get('shadow_id')}")
+            else:
+                st.error(f"API Error: {r.status_code}")
+        except Exception as e:
+            st.error(f"Verbindungsfehler: {e}")
