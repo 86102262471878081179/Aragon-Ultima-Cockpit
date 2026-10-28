@@ -11,7 +11,7 @@ import io
 import csv
 
 # ============================================================
-# 1. PAGE CONFIG + CSS (Sauberes Design, keine GFW-Bezüge)
+# 1. PAGE CONFIG + CSS
 # ============================================================
 st.set_page_config(
     page_title="YGGDRASIL_OS :: Sovereign Cockpit v3",
@@ -44,6 +44,8 @@ st.markdown("""
     .doc-output { background: #0d0d1a; border: 1px solid #d4af37; padding: 20px;
         border-radius: 6px; font-family: 'Times New Roman', serif; font-size: 0.95rem;
         white-space: pre-wrap; line-height: 1.6; }
+    .health-ok  { color: #00ff88; font-weight: bold; }
+    .health-bad { color: #ff4444; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -73,16 +75,24 @@ if "metric_history" not in st.session_state:
     st.session_state.metric_history = []
 if "kill_switch_active" not in st.session_state:
     st.session_state.kill_switch_active = False
+if "backend_url" not in st.session_state:
+    st.session_state.backend_url = os.getenv(
+        "YGGDRASIL_BACKEND",
+        "https://aragon-backend-api.onrender.com",
+    )
 
 # ============================================================
 # 3. HELPERS
 # ============================================================
 def log_event(kind: str, msg: str):
+    """Schreibt ein Ereignis in die WORM-Chronik."""
     st.session_state.chronik.append({
         "ts": time.strftime("%H:%M:%S"), "kind": kind, "msg": msg,
     })
 
+
 def render_mermaid(code: str, height: int = 600):
+    """Rendert einen Mermaid-Graphen."""
     html_code = f'''
     <div class="mermaid" style="background-color: #0a0a12; text-align: center;">{code}</div>
     <script type="module">
@@ -92,12 +102,40 @@ def render_mermaid(code: str, height: int = 600):
     '''
     components.html(html_code, height=height, scrolling=True)
 
+
+def check_backend():
+    """Pingt den Backend-Health-Endpoint."""
+    try:
+        r = httpx.get(f"{st.session_state.backend_url}/health", timeout=5.0)
+        if r.status_code == 200:
+            return True, r.json()
+        return False, {"detail": f"HTTP {r.status_code}"}
+    except Exception as e:
+        return False, {"detail": str(e)}
+
 # ============================================================
 # 4. SIDEBAR NAVIGATION
 # ============================================================
 st.sidebar.title("YGGDRASIL_OS v3")
 st.sidebar.markdown("**Authority**: Sovereign Root Thomas")
 st.sidebar.markdown("**Kernel**: Schwarzer Punkt")
+st.sidebar.divider()
+
+# Backend-Health
+_ok, _health = check_backend()
+if _ok:
+    st.sidebar.markdown(
+        f'<span class="health-ok">● BACKEND ONLINE</span> · {_health.get("entities_loaded", 0)} Entities',
+        unsafe_allow_html=True,
+    )
+else:
+    st.sidebar.markdown(
+        f'<span class="health-bad">● BACKEND OFFLINE</span>',
+        unsafe_allow_html=True,
+    )
+    with st.sidebar.expander("Fehlerdetails"):
+        st.json(_health)
+
 st.sidebar.divider()
 
 if st.session_state.kill_switch_active:
@@ -236,29 +274,33 @@ elif nav == "⚖️ Normen-Engine":
             st.success("Berechnung verewigt.")
 
 # ============================================================
-# PANEL 5: API LIVE INTERFACE (Kritischer Fix)
+# PANEL 5: API LIVE INTERFACE
 # ============================================================
 elif nav == "⚡ API Live Interface":
     st.markdown('<div class="main-header">⚡ API COMMAND CENTER ⚡</div>', unsafe_allow_html=True)
     tab_chat, tab_settings, tab_sys = st.tabs(["💬 Live Chat", "⚙️ Settings (Seal)", "📊 System Status"])
+
     with tab_chat:
         for msg in st.session_state.messages:
             with st.chat_message(msg["role"]):
                 st.markdown(msg["content"])
+
         if prompt := st.chat_input("Frage an die Matrix (z.B. Was ist Node 0105?)"):
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
             with st.chat_message("assistant"):
-                with st.spinner("Render Backend wird abgefragt..."):
+                with st.spinner("Backend wird abgefragt..."):
                     try:
-                        api_url = "https://aragon-backend-api.onrender.com/prompt/check"
+                        api_url = f"{st.session_state.backend_url}/prompt/check"
                         payload = {"prompt": prompt, "auth_seal": st.session_state.auth_seal}
                         response = httpx.post(api_url, json=payload, timeout=30.0)
+
                         if response.status_code == 200:
                             data = response.json()
                             status = data.get("status", "")
-                            # NEU: akzeptiert altes ("200_OK") UND neues ("200_OK_ALLOW") Format
+
+                            # Akzeptiert altes UND neues Format
                             if status in ("200_OK", "200_OK_ALLOW"):
                                 ai_ans = (
                                     data.get("data", {}).get("ai_answer")
@@ -266,16 +308,18 @@ elif nav == "⚡ API Live Interface":
                                     or "Keine KI-Antwort."
                                 )
                                 st.markdown(f"**KI-Antwort:**\n{ai_ans}")
-                                # NEU: RAG-Match + WORM-Block als Kontext
+
                                 matched = data.get("data", {}).get("entities_matched") or []
                                 if matched:
                                     st.caption(f"🎯 RAG-Match: {', '.join(matched[:8])}")
+
                                 worm = data.get("worm", {})
                                 if worm:
                                     st.caption(
                                         f"🔒 WORM Block #{worm.get('block')} · "
                                         f"{str(worm.get('hash', ''))[:16]}…"
                                     )
+
                                 st.session_state.messages.append(
                                     {"role": "assistant", "content": ai_ans}
                                 )
@@ -283,18 +327,23 @@ elif nav == "⚡ API Live Interface":
                             else:
                                 st.error(f"Fail-Closed! {data.get('detail', 'unbekannt')}")
                         else:
-                            st.error(f"API Error: {response.status_code}")
+                            st.error(f"API Error: HTTP {response.status_code}")
                     except Exception as e:
                         st.error(f"Verbindungsfehler: {str(e)}")
+
     with tab_settings:
         new_seal = st.text_input("Authorization Token (Seal)", value=st.session_state.auth_seal)
-        if st.button("Token aktualisieren"):
+        new_backend = st.text_input("Backend-URL", value=st.session_state.backend_url)
+        if st.button("Einstellungen speichern"):
             st.session_state.auth_seal = new_seal
-            log_event("EXEC", "Auth-Seal rotiert")
-            st.success("Token gespeichert.")
+            st.session_state.backend_url = new_backend
+            log_event("EXEC", "Auth-Seal / Backend-URL rotiert")
+            st.success("Gespeichert.")
+
     with tab_sys:
         st.metric(label="Aktives Auth Seal", value=st.session_state.auth_seal)
         st.metric(label="Nachrichten im Verlauf", value=len(st.session_state.messages))
+        st.metric(label="Backend-URL", value=st.session_state.backend_url)
 
 # ============================================================
 # PANEL 6: 201+ ENTITÄTEN EXPLORER
@@ -302,6 +351,7 @@ elif nav == "⚡ API Live Interface":
 elif nav == "📚 201+ Entitäten Explorer":
     st.markdown('<div class="main-header">📚 REGISTRY MANAGER 📚</div>', unsafe_allow_html=True)
     tab_table, tab_upload = st.tabs(["📖 Entitäten Tabelle", "📤 CSV Upload"])
+
     with tab_table:
         search_term = st.text_input("🔍 Suche nach ID, Name oder Ring", "")
         books_data = [
@@ -313,9 +363,14 @@ elif nav == "📚 201+ Entitäten Explorer":
         ]
         df = pd.DataFrame(books_data)
         if search_term:
-            df = df[df["Name"].str.contains(search_term, case=False) | df["ID"].str.contains(search_term) | df["Ring"].str.contains(search_term, case=False)]
+            df = df[
+                df["Name"].str.contains(search_term, case=False)
+                | df["ID"].str.contains(search_term)
+                | df["Ring"].str.contains(search_term, case=False)
+            ]
         st.dataframe(df, use_container_width=True, hide_index=True)
         st.caption(f"{len(df)} von {len(books_data)} Entitäten angezeigt")
+
     with tab_upload:
         uploaded_file = st.file_uploader("CSV auswählen", type="csv")
         if uploaded_file is not None:
@@ -345,6 +400,7 @@ elif nav == "📜 Urkunden-Forge":
         empfaenger = st.text_input("Empfänger", "Landratsamt XY, Sachbearbeiter Müller")
         datum = st.date_input("Datum")
     begruendung = st.text_area("Begründung / Sachverhalt", "Der Bescheid vom 01.01.2025 ist rechtswidrig...", height=150)
+
     if st.button("📜 Urkunde generieren", type="primary"):
         doc = f"""
 {absender}
@@ -366,7 +422,12 @@ Mit freundlichen Grüßen
 SHA3-512: {hashlib.sha3_512((absender + empfaenger + begruendung).encode()).hexdigest()}
 """
         st.markdown(f'<div class="doc-output">{doc}</div>', unsafe_allow_html=True)
-        st.download_button("📥 Urkunde als .txt herunterladen", doc, file_name=f"urkunde_{aktenzeichen}.txt", mime="text/plain")
+        st.download_button(
+            "📥 Urkunde als .txt herunterladen",
+            doc,
+            file_name=f"urkunde_{aktenzeichen}.txt",
+            mime="text/plain",
+        )
         log_event("WORM", f"Urkunde generiert: {template} ({aktenzeichen})")
 
 # ============================================================
@@ -375,7 +436,11 @@ SHA3-512: {hashlib.sha3_512((absender + empfaenger + begruendung).encode()).hexd
 elif nav == "🔐 Krypto-Schmiede":
     st.markdown('<div class="main-header">🔐 KRYPTO-SCHMIEDE</div>', unsafe_allow_html=True)
     text = st.text_area("Eingabe", "Sovereign Text — Ex Tunc", height=100)
-    algs = st.multiselect("Hash-Algorithmen", ["SHA3-512", "SHA-256", "BLAKE2b", "MD5"], default=["SHA3-512", "SHA-256"])
+    algs = st.multiselect(
+        "Hash-Algorithmen",
+        ["SHA3-512", "SHA-256", "BLAKE2b", "MD5"],
+        default=["SHA3-512", "SHA-256"],
+    )
     if st.button("🔨 Hashen", type="primary") and text:
         result = {}
         data = text.encode()
@@ -387,6 +452,7 @@ elif nav == "🔐 Krypto-Schmiede":
         for alg, h in result.items():
             st.code(f"{alg}: {h}", language="text")
         log_event("WORM", f"Hash-Berechnung über {len(result)} Algorithmen")
+
     st.divider()
     st.subheader("🔑 Deterministische Signatur-Simulation")
     seed = st.text_input("Signatur-Seed", st.session_state.auth_seal)
@@ -403,10 +469,12 @@ elif nav == "🛡️ eBPF Mesh Monitor":
     c1.metric("Throughput", "273,077 Tx/s", "100% WORM")
     c2.metric("eBPF Latency", "9.47 ns", "-0.15 ns")
     c3.metric("Blocked", "385/5000", "Fail-Closed")
+
     col_p1, col_p2, col_p3 = st.columns([1, 1, 1])
     with col_p1: src_node = st.selectbox("Source", ["R0_0068", "R1_0089", "EXTERNAL_UNAUTH"])
     with col_p2: tgt_node = st.selectbox("Target", ["R100_0100", "R0_0001", "R2_0017"])
     with col_p3: run_sim = st.button("📡 Testen", type="primary", use_container_width=True)
+
     if run_sim:
         if "EXTERNAL" in src_node:
             st.error("🚨 INTRUSION INTERCEPTED")
@@ -423,23 +491,51 @@ elif nav == "🛡️ eBPF Mesh Monitor":
 elif nav == "🔒 WORM Ledger Audit":
     st.markdown('<div class="main-header">🔒 WORM LEDGER AUDIT 🔒</div>', unsafe_allow_html=True)
     st.success("✅ SYSTEM STATUS: CLEAN (100% PURITY_SCORE)")
-    st.markdown('<div class="seal-box"><strong>SEAL STATUS:</strong> Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC_CLEAN<br/><strong>INTEGRITY:</strong> VERIFIED<br/><strong>MASTER HASH:</strong><br/><code>850b2ef003f53db90f704b16e54869fc6ba6265eae13aafde9046fe0e4d99dab</code></div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="seal-box">'
+        '<strong>SEAL STATUS:</strong> Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC_CLEAN<br/>'
+        '<strong>INTEGRITY:</strong> VERIFIED<br/>'
+        '<strong>MASTER HASH:</strong><br/>'
+        '<code>850b2ef003f53db90f704b16e54869fc6ba6265eae13aafde9046fe0e4d99dab</code>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    # Backend-Ledger live abrufen
+    try:
+        r = httpx.get(f"{st.session_state.backend_url}/stats", timeout=5.0)
+        if r.status_code == 200:
+            st.json(r.json())
+    except Exception:
+        st.caption("Backend-Stats nicht erreichbar.")
 
 # ============================================================
 # PANEL 11: WORM-CHRONIK
 # ============================================================
 elif nav == "📅 WORM-Chronik":
     st.markdown('<div class="main-header">📅 WORM-CHRONIK</div>', unsafe_allow_html=True)
-    filter_kind = st.multiselect("Filter nach Ereignistyp", ["EXEC", "INGRESS", "WORM", "ALERT", "KILL"], default=["EXEC", "INGRESS", "WORM", "ALERT", "KILL"])
+    filter_kind = st.multiselect(
+        "Filter nach Ereignistyp",
+        ["EXEC", "INGRESS", "WORM", "ALERT", "KILL"],
+        default=["EXEC", "INGRESS", "WORM", "ALERT", "KILL"],
+    )
     entries = [e for e in st.session_state.chronik if e["kind"] in filter_kind]
     if not entries:
         st.info("Keine Einträge mit diesem Filter.")
     else:
         for e in entries:
-            st.markdown(f'<div class="chronicle chronicle-{e["kind"]}"><strong>[{e["ts"]}] {e["kind"]}</strong> :: {e["msg"]}</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="chronicle chronicle-{e["kind"]}">'
+                f'<strong>[{e["ts"]}] {e["kind"]}</strong> :: {e["msg"]}</div>',
+                unsafe_allow_html=True,
+            )
     st.divider()
     df_chronik = pd.DataFrame(st.session_state.chronik)
-    st.download_button("📥 Chronik als CSV exportieren", df_chronik.to_csv(index=False), "worm_chronik.csv", "text/csv")
+    st.download_button(
+        "📥 Chronik als CSV exportieren",
+        df_chronik.to_csv(index=False),
+        "worm_chronik.csv",
+        "text/csv",
+    )
 
 # ============================================================
 # PANEL 12: FEINDREGISTER
@@ -457,7 +553,9 @@ elif nav == "🎯 Feindregister":
     with c3: new_status = st.selectbox("Status", ["ISOLATED", "BLACKLISTED", "QUARANTINED", "WATCHED"])
     if st.button("Registrieren", type="primary") and new_name:
         new_id = f"F-{len(st.session_state.feinde) + 1:03d}"
-        st.session_state.feinde.append({"ID": new_id, "Name": new_name, "Grund": new_grund, "Status": new_status})
+        st.session_state.feinde.append({
+            "ID": new_id, "Name": new_name, "Grund": new_grund, "Status": new_status,
+        })
         log_event("ALERT", f"Feind registriert: {new_name} ({new_id})")
         st.rerun()
 
@@ -468,7 +566,8 @@ elif nav == "🗳️ Council-Voting":
     st.markdown('<div class="main-header">🗳️ COUNCIL-VOTING</div>', unsafe_allow_html=True)
     st.subheader("➕ Neuen Antrag einbringen")
     cA, cB = st.columns([3, 1])
-    with cA: new_proposal = st.text_input("Antrag", placeholder="z.B. Buch 100 als Singularität ratifizieren")
+    with cA:
+        new_proposal = st.text_input("Antrag", placeholder="z.B. Buch 100 als Singularität ratifizieren")
     with cB:
         st.markdown("<br/>", unsafe_allow_html=True)
         if st.button("Einbringen", use_container_width=True) and new_proposal:
@@ -485,13 +584,16 @@ elif nav == "🗳️ Council-Voting":
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     if st.button(f"✅ JA ({tally['JA']})", key=f"ja_{proposal}", use_container_width=True):
-                        st.session_state.votes[proposal]["JA"] += 1; st.rerun()
+                        st.session_state.votes[proposal]["JA"] += 1
+                        st.rerun()
                 with c2:
                     if st.button(f"❌ NEIN ({tally['NEIN']})", key=f"nein_{proposal}", use_container_width=True):
-                        st.session_state.votes[proposal]["NEIN"] += 1; st.rerun()
+                        st.session_state.votes[proposal]["NEIN"] += 1
+                        st.rerun()
                 with c3:
                     if st.button(f"⚪ ENTHALTUNG ({tally['ENTHALTUNG']})", key=f"ent_{proposal}", use_container_width=True):
-                        st.session_state.votes[proposal]["ENTHALTUNG"] += 1; st.rerun()
+                        st.session_state.votes[proposal]["ENTHALTUNG"] += 1
+                        st.rerun()
                 total = sum(tally.values())
                 if total > 0:
                     ja_pct = (tally["JA"] / total) * 100
@@ -589,6 +691,7 @@ elif nav == "💾 Sovereign Export":
     export_payload = {
         "export_ts": time.strftime("%Y-%m-%d %H:%M:%S"),
         "auth_seal": st.session_state.auth_seal,
+        "backend_url": st.session_state.backend_url,
         "kill_switch_active": st.session_state.kill_switch_active,
         "chronik": st.session_state.chronik,
         "feinde": st.session_state.feinde,
@@ -601,10 +704,22 @@ elif nav == "💾 Sovereign Export":
     st.divider()
     c1, c2 = st.columns(2)
     with c1:
-        st.download_button("📥 Vollständiges JSON-Backup", json.dumps(export_payload, indent=2, ensure_ascii=False), f"yggdrasil_export_{int(time.time())}.json", "application/json", use_container_width=True)
+        st.download_button(
+            "📥 Vollständiges JSON-Backup",
+            json.dumps(export_payload, indent=2, ensure_ascii=False),
+            f"yggdrasil_export_{int(time.time())}.json",
+            "application/json",
+            use_container_width=True,
+        )
     with c2:
         df_chronik = pd.DataFrame(st.session_state.chronik)
-        st.download_button("📥 Chronik als CSV", df_chronik.to_csv(index=False), f"chronik_{int(time.time())}.csv", "text/csv", use_container_width=True)
+        st.download_button(
+            "📥 Chronik als CSV",
+            df_chronik.to_csv(index=False),
+            f"chronik_{int(time.time())}.csv",
+            "text/csv",
+            use_container_width=True,
+        )
 
 # ============================================================
 # PANEL 18: ARCHITEKTUR-MATRIX
