@@ -1,28 +1,27 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/86102262471878081179/Black-Six-Matrix/blob/main/agents/agent_registry.schema.json",
-  "title": "Black-Six-Matrix Agent Registry",
+  "title": "AgentRegistry",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["registry_version", "agents"],
+  "required": ["version", "entities"],
   "properties": {
-    "registry_version": { "const": "1.0.0" },
-    "agents": {
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "master_seal": {"type": "string", "minLength": 64, "maxLength": 128},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "entities": {
       "type": "array",
-      "items": { "$ref": "#/$defs/agent" }
-    }
-  },
-  "$defs": {
-    "agent": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "name", "tier", "status", "description"],
-      "properties": {
-        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
-        "name": { "type": "string", "minLength": 1 },
-        "tier": { "enum": ["tier-1-governance", "tier-2-security", "tier-3-analysis"] },
-        "status": { "enum": ["planned", "active", "deprecated"] },
-        "description": { "type": "string", "minLength": 1 }
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "ring", "status"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^\\d{4}$"},
+          "name": {"type": "string", "minLength": 3},
+          "ring": {"type": "string", "enum": ["Ring 0", "Ring 1", "Ring 2", "Ring 3", "Ring 4", "Ring 5", "Ring 6", "Ring Ω"]},
+          "talents": {"type": "array", "items": {"type": "string"}},
+          "modules": {"type": "array", "items": {"type": "string"}},
+          "status": {"type": "string", "enum": ["ACTIVE", "LOCKED", "GENESIS", "DEPRECATED", "QUARANTINED"]},
+          "seal": {"type": "string", "pattern": "^[a-f0-9]{32,128}$"}
+        }
       }
     }
   }
