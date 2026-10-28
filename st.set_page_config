@@ -1,0 +1,6 @@
+st.set_page_config(
+    page_title="YGGDRASIL_OS :: Sovereign Cockpit v3",
+    page_icon="⚫",
+    layout="wide",
+    initial_sidebar_state="collapsed", # <-- "expanded" durch "collapsed" ersetzen!
+)
