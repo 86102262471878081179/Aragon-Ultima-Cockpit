@@ -1723,6 +1723,150 @@ flowchart LR
     """
         render_mermaid(code3, height=350)
 
+# ... deine bisherigen drei Expander (4x4 Council, Feindregister, L.S.S. Pipeline) ...
+
+    # NEUER EXPANDER (Füge das hier ein):
+    with st.expander("🧬 Full System Architecture (Rings, PBFT, WORM, X3D)"):
+        code_full = """
+flowchart TD
+    classDef operator fill:#000000,stroke:#00FFCC,stroke-width:3px,color:#00FFCC;
+    classDef frontend fill:#0a192f,stroke:#00BFFF,stroke-width:2px,color:#FFF;
+    classDef backend fill:#2b1400,stroke:#FF8C00,stroke-width:3px,color:#FFF;
+    classDef guard fill:#2b0909,stroke:#FF0000,stroke-width:4px,color:#FF5555;
+    classDef pbft fill:#1f1135,stroke:#FF007F,stroke-width:2px,color:#FF85B3;
+    classDef merkle fill:#001f3f,stroke:#27e4ff,stroke-width:2px,color:#27e4ff;
+    classDef avatar fill:#111111,stroke:#9D4EDD,stroke-width:2px,color:#E0AAFF;
+    classDef worm fill:#001a00,stroke:#00FF00,stroke-width:3px,color:#00FF00;
+    classDef x3d fill:#082014,stroke:#38B000,stroke-width:2px,color:#70E000;
+    classDef hud fill:#0a192f,stroke:#00F5D4,stroke-width:2px,color:#00F5D4;
+    classDef lore fill:#1b1b1b,stroke:#FFD700,stroke-width:2px,color:#FFF;
+    classDef ring0 fill:#1a1c29,stroke:#FFD700,stroke-width:2px,color:#FFF;
+    classDef ring1 fill:#0a192f,stroke:#00F5D4,stroke-width:2px,color:#00F5D4;
+    classDef ring2 fill:#1f1135,stroke:#FF007F,stroke-width:2px,color:#FF85B3;
+    classDef ring3 fill:#082014,stroke:#38B000,stroke-width:2px,color:#70E000;
+    classDef ring4 fill:#1b1b1b,stroke:#9D4EDD,stroke-width:2px,color:#E0AAFF;
+    classDef ring5 fill:#1a0000,stroke:#FF0000,stroke-width:3px,color:#FFF;
+    classDef reserve fill:#111111,stroke:#555555,stroke-width:1px,color:#888888;
+    classDef hades fill:#2b0909,stroke:#FF4500,stroke-width:2px,color:#FF8C00;
+
+    Op(("Thomas König Prime Operator")):::operator
+    Op -->|"Prompt"| Streamlit["Streamlit Cockpit (Frontend)"]:::frontend
+    Streamlit <-->|"POST /genesis"| API["FastAPI Render Engine"]:::backend
+    API --> Krisler{"Krisler 2.1 Guard"}:::guard
+
+    Krisler -->|"ALLOW"| Registry[("B6-Core Registry 107 Books")]:::backend
+    Krisler -.->|"BLOCK"| FailClosed["Fail-Closed High Risk"]:::guard
+
+    subgraph Ring0 ["RING 0 CORE KERNEL"]
+        direction TB
+        B1["0001 Genesis Root"]:::ring0
+        B2["0002 Black King Royal"]:::ring0
+        B4["0004 Core Shield"]:::ring0
+        B10["0010 Black Cobra Omega"]:::ring0
+        B59["0059 Aragon Ultima Ratio"]:::ring0
+        B68["0068 Sovereign Apex"]:::ring0
+    end
+
+    subgraph Ring1 ["RING 1 JUSTICE"]
+        direction TB
+        B7["0007 Fortress Justice"]:::ring1
+        B12["0012 Akte Koenig"]:::ring1
+        B36["0036 Foucault KI"]:::ring1
+        B40["0040 Black Arsenal LLM"]:::ring1
+    end
+
+    subgraph Ring234 ["RING 2 3 4 WORM NEURO SPEZIAL"]
+        direction TB
+        B8["0008 Omni Neuro"]:::ring3
+        B17["0017 Yggdrasil WORM"]:::ring2
+        B23["0023 Mettwurst Epos"]:::ring4
+        B29["0029 Hades and Kerberus"]:::hades
+        B53["0053 OMNI WORM Hub"]:::ring2
+    end
+
+    subgraph Ring5 ["RING 5 APEX"]
+        direction TB
+        B61["0061 Tensor Faltung Alpha"]:::ring5
+        B66["0066 Finale Synthese"]:::ring5
+        B67["0067 Ereignishorizont"]:::ring5
+    end
+
+    subgraph Reserve ["RESERVE 69-99"]
+        direction TB
+        R69["0069 White Dragon"]:::reserve
+        R99["0099 Black Six Ult"]:::reserve
+    end
+
+    Registry --> Ring0
+    Registry --> Ring1
+    Registry --> Ring234
+    Registry --> Ring5
+    Registry --> Reserve
+
+    subgraph PBFTMod ["PBFT Cluster"]
+        direction TB
+        PBFTKernel["PBFTCluster.ts"]:::pbft
+        PBFTBus["EventBus.ts"]:::pbft
+        PBFTSvg["PBFTClusterSvgAnimation.tsx"]:::pbft
+        PBFTKernel --> PBFTBus --> PBFTSvg
+    end
+
+    subgraph MerkleMod ["Merkle Tree"]
+        direction TB
+        MerkleCore["MerkleTree.ts"]:::merkle
+        MerkleSvg["MerkleSvg.tsx"]:::merkle
+        MerkleCore --> MerkleSvg
+    end
+
+    subgraph AvatarMod ["Operator Avatar"]
+        direction TB
+        OpModel["operator.ts"]:::avatar
+        OpUI["OperatorAvatar.tsx"]:::avatar
+        OpModel --> OpUI
+    end
+
+    subgraph WormX3DMod ["WORM Tresor 3D"]
+        direction TB
+        WormCore["WormTresor.ts"]:::worm
+        X3DScene["WormTresor.x3d"]:::x3d
+        Heatmap3D["EBPFHeatmap.x3d"]:::x3d
+        WormCore --> X3DScene
+        WormCore --> Heatmap3D
+    end
+
+    subgraph HUDLore ["HUD and LORE"]
+        direction TB
+        HUDPanel["HUD.tsx"]:::hud
+        LorePanel["LorePanel.tsx"]:::lore
+        AragonConsole["AragonConsole.tsx"]:::lore
+        HUDPanel --> LorePanel --> AragonConsole
+    end
+
+    Registry -->|"load PBFT"| PBFTKernel
+    Registry -->|"load Merkle"| MerkleCore
+    Registry -->|"load Avatar"| OpModel
+    Registry -->|"load WORM+X3D"| WormCore
+    Registry -->|"load HUD+LORE"| HUDPanel
+
+    API -->|"GENESIS_FLOW"| PBFTKernel
+    PBFTKernel -->|"CONSENSUS"| MerkleCore
+    MerkleCore -->|"ROOT_HASH"| WormCore
+    WormCore -->|"SEAL"| HUDPanel
+
+    Registry -->|"Buch-Daten"| DNA{{"DNA Tensor 0-9"}}:::backend
+    DNA --> Hasher["SHA3-512 Hasher"]:::worm
+    Hasher --> MasterSeal[("MASTER SEAL")]:::worm
+    MasterSeal --> WORM[("WORM Ledger")]:::worm
+
+    WORM ==>|"Ledger-Proof"| API
+    HUDPanel -->|"EVENTS"| Streamlit
+    Streamlit ==>|"UI + STORY"| Op
+    OpModel -->|"IDENTITY"| HUDPanel
+    AragonConsole -->|"ROOTKEEPER"| HUDPanel
+    Heatmap3D -->|"KERNEL TRACE"| HUDPanel
+    X3DScene -->|"VISUAL SEAL"| HUDPanel
+    """
+        render_mermaid(code_full, height=900)
 # ═══════════════════════════════════════════════════════════════════════════════
 # ENDE DER APP.PY
 # ═══════════════════════════════════════════════════════════════════════════════
