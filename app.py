@@ -433,6 +433,21 @@ elif nav == "🚨 Notfall-Kill-Switch":
             st.session_state.kill_switch_active = False
             log_event("KILL", "Kill-Switch deaktiviert")
             st.rerun()
+            
+elif nav == "🏴‍☠️ Omni-Shooter":
+    st.markdown('<div class="main-header">🏴‍☠️ BLACK SIX OMNI-SHOOTER</div>', unsafe_allow_html=True)
+    
+    # Pfad zur HTML-Datei
+    html_path = Path(__file__).parent / "frontend" / "omni_shooter.html"
+    
+    if html_path.exists():
+        with open(html_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        # Rendert das HTML in einem Iframe
+        components.html(html_content, height=900, scrolling=True)
+    else:
+        st.error("Omni-Shooter HTML-Datei nicht gefunden.")
+            
     else:
         st.warning("**WARNUNG**: Der Kill-Switch isoliert alle Ingress-Pfade sofort.")
         confirm = st.checkbox("Ich bestätige die Aktivierung.")
