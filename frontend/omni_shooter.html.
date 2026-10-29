@@ -2,202 +2,363 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>⚫ BLACK SIX OMNI-SHOOTER</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚫ BLACK SIX OMNI-SHOOTER (74 MODULE)</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.css">
     <style>
-        body { background: #03050a; color: #d0d0e0; font-family: 'JetBrains Mono', monospace; margin: 0; padding: 20px; }
-        .header { text-align: center; color: #00e5ff; text-shadow: 0 0 15px #00e5ff; margin-bottom: 20px; }
-        .module { background: #0a122a; border: 1px solid #1f2933; border-radius: 8px; margin: 10px 0; padding: 15px; }
-        .module-header { display: flex; justify-content: space-between; color: #b800ff; font-weight: bold; cursor: pointer; }
-        .module-code { display: none; margin-top: 10px; background: #000; padding: 10px; border-radius: 4px; overflow-x: auto; }
-        .module-code.active { display: block; }
-        .badge { background: #141d28; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; color: #00e5ff; }
-        .export-btn { background: #00e5ff; color: #000; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
-        .chat-box { background: #0a122a; border: 1px solid #00e5ff; border-radius: 8px; padding: 15px; margin-top: 30px; }
-        #chat-output { background: #000; padding: 10px; min-height: 100px; max-height: 300px; overflow-y: auto; border-radius: 4px; margin-bottom: 10px; }
-        #chat-input { width: 100%; padding: 10px; background: #141d28; color: #00e5ff; border: 1px solid #333; border-radius: 4px; box-sizing: border-box; }
+        * { box-sizing: border-box; }
+        body {
+            background: #03050a;
+            color: #d0d0e0;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { color: #00e5ff; text-shadow: 0 0 20px #00e5ff; font-size: 2rem; margin-bottom: 5px; letter-spacing: 3px; }
+        .header p { color: #b800ff; font-size: 0.85rem; letter-spacing: 2px; }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #1f2933; }
+        .tab { padding: 10px 20px; cursor: pointer; color: #8080a0; border: none; background: none; font-family: inherit; font-size: 0.9rem; border-bottom: 2px solid transparent; }
+        .tab.active { color: #00e5ff; border-bottom-color: #00e5ff; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        /* Filter Bar */
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .search-input { flex: 1; min-width: 200px; background: #141d28; border: 1px solid #1f2933; color: #00e5ff; padding: 10px; border-radius: 4px; font-family: inherit; }
+        .filter-select { background: #141d28; border: 1px solid #1f2933; color: #80c0ff; padding: 10px; border-radius: 4px; font-family: inherit; cursor: pointer; }
+
+        /* Module */
+        .module { background: #0a122a; border: 1px solid #1f2933; border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+        .module-header { padding: 12px 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #0d1526; }
+        .module-header:hover { background: #142036; }
+        .module-title { color: #00e5ff; font-weight: bold; }
+        .module-badge { background: #1a2840; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; color: #80c0ff; }
+        .module-category { font-size: 0.7rem; color: #b800ff; margin-top: 3px; }
+        .module-body { display: none; padding: 15px; border-top: 1px solid #1f2933; }
+        .module-body.active { display: block; }
+        .module-body pre { background: #000; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; max-height: 400px; }
+        .export-btn { background: #00e5ff; color: #000; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; font-family: inherit; }
+        .export-btn:hover { background: #00b8d4; }
+
+        /* Chat */
+        .chat-box { background: #0a122a; border: 1px solid #00e5ff; border-radius: 8px; padding: 20px; max-width: 900px; margin: 0 auto; }
+        .chat-output { background: #000; padding: 15px; border-radius: 4px; min-height: 300px; max-height: 500px; overflow-y: auto; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.6; }
+        .chat-output div { margin: 5px 0; }
+        .chat-output .user { color: #80f0ff; }
+        .chat-output .system { color: #00ff88; }
+        .chat-input-row { display: flex; gap: 10px; }
+        .chat-input { flex: 1; background: #141d28; color: #00e5ff; border: 1px solid #1f2933; padding: 10px; border-radius: 4px; font-family: inherit; font-size: 0.9rem; }
+        .chat-send { background: #00e5ff; color: #000; border: none; padding: 10px 25px; border-radius: 4px; cursor: pointer; font-weight: bold; font-family: inherit; }
+
+        /* Export */
+        .export-section { text-align: center; padding: 40px 20px; }
+        .export-section h2 { color: #00e5ff; margin-bottom: 15px; }
+        .export-section p { color: #8080a0; margin-bottom: 25px; }
+        .export-master { background: #ff0044; color: #fff; border: none; padding: 15px 40px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; font-family: inherit; margin: 10px; }
+        .export-master:hover { background: #ff2266; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <h1>🏴‍☠️ BLACK SIX OMNI-SHOOTER</h1>
-    <p>Φ_LOCKED_ABSOLUTE | SEAL: 850b2ef0...</p>
+    <p>Φ_LOCKED_ABSOLUTE · 74 MODULE INDEXED</p>
 </div>
 
-<div id="modules-container"></div>
+<div class="tabs">
+    <button class="tab active" onclick="showTab('modules')">📦 Module (74)</button>
+    <button class="tab" onclick="showTab('chat')">💬 Chat</button>
+    <button class="tab" onclick="showTab('export')">📥 Export</button>
+</div>
 
-<div class="chat-box">
-    <h2>💬 OMNI-CHAT (Deep Seek · Die Andere Welt)</h2>
-    <div id="chat-output">⚡ Black Six Omni-Shooter geladen. Frage mich nach Modulen oder der Matrix.</div>
-    <input type="text" id="chat-input" placeholder="Frage an das System..." onkeypress="if(event.key==='Enter') sendMessage()">
-    <button class="export-btn" onclick="exportAll()">📦 Alle Codes exportieren</button>
+<!-- MODULE PANEL -->
+<div class="panel active" id="panel-modules">
+    <div class="filter-bar">
+        <input type="text" class="search-input" id="search" placeholder="🔍 Suche nach Modulname, ID oder Beschreibung..." oninput="filterModules()">
+        <select class="filter-select" id="category-filter" onchange="filterModules()">
+            <option value="all">Alle Kategorien</option>
+            <option value="Python Core">Python Core</option>
+            <option value="L.S.S. Neuro">L.S.S. Neuro</option>
+            <option value="Sandbox">Sandboxes</option>
+            <option value="Rust Kernel">Rust Kernel</option>
+            <option value="Go Core">Go Core</option>
+            <option value="Infra">Infrastruktur</option>
+            <option value="Architecture">Architektur</option>
+        </select>
+    </div>
+    <div id="modules-container"></div>
+</div>
+
+<!-- CHAT PANEL -->
+<div class="panel" id="panel-chat">
+    <div class="chat-box">
+        <div class="chat-output" id="chat-output">
+            <div class="system">⚡ BLACK SIX OMNI-SHOOTER (v2.6.6.6) geladen.</div>
+            <div class="system">💡 74 Module indexiert. Frage mich nach Modulen, Codes oder der Matrix.</div>
+        </div>
+        <div class="chat-input-row">
+            <input type="text" class="chat-input" id="chat-input" placeholder="Frage an die Matrix..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <button class="chat-send" onclick="sendMessage()">▶ Senden</button>
+        </div>
+    </div>
+</div>
+
+<!-- EXPORT PANEL -->
+<div class="panel" id="panel-export">
+    <div class="export-section">
+        <h2>📦 CODE-EXPORT</h2>
+        <p>Lade das gesamte Archiv (alle 74 Module) als Textdatei herunter.</p>
+        <button class="export-master" onclick="exportAll()">⬇ ALLE 74 MODULE EXPORTIEREN</button>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-rust.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-go.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════════════
-// MODUL-REGISTRY (Hier baust du deine 74 Module ein)
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// ALLE 74 MODULE (Struktur & Platzhalter)
+// ═══════════════════════════════════════════════════════════════════════════════
 const MODULES = [
-    {
-        id: "main_py",
-        name: "main.py",
-        lang: "python",
-        description: "Monster-API (1374 Zeilen) - FastAPI Backend",
-        code: `# main.py - B6 MONSTER API
-# Hier den vollen Code einfügen...
-def hello():
-    return "Φ_LOCKED_ABSOLUTE"`
-    },
-    {
-        id: "app_py",
-        name: "app.py",
-        lang: "python",
-        description: "Streamlit Cockpit (24 Panels)",
-        code: `# app.py - Sovereign Cockpit
-import streamlit as st
-st.title("BLACK SIX MATRIX")`
-    },
-    {
-        id: "main_go",
-        name: "main.go",
-        lang: "go",
-        description: "Go-Core WORM-Ledger",
-        code: `// main.go - B6 CORE
-package main
-func main() { println("Φ_LOCKED") }`
-    },
-    // Hier baust du alle 74 Module ein (Rust, Go, Python, YAML)
+    // --- PYTHON CORE (12) ---
+    { id: "P01", name: "main.py", lang: "python", cat: "Python Core", desc: "Monster-API v2.6.6.6 (1818 Zeilen)", code: "# main.py — Vollständiger Code im Repo aragon-backend-\nfrom fastapi import FastAPI\napp = FastAPI()" },
+    { id: "P02", name: "eselsbruecke.py", lang: "python", cat: "Python Core", desc: "Eselsbrücken-Registry Modul", code: "# eselsbruecke.py\nclass EselsbrueckenRegister:\n    pass" },
+    { id: "P03", name: "eselsbruecken_registry.csv", lang: "text", cat: "Python Core", desc: "Die 10 Eselsbrücken als CSV", code: "ID,Alter_Hash,Mnemonic_Key\nE-001,850b2ef0,Koenig_der_Liga" },
+    { id: "P04", name: "requirements.txt", lang: "text", cat: "Python Core", desc: "Python-Abhängigkeiten für Render", code: "fastapi>=0.115.0\nuvicorn[standard]>=0.32.0\npydantic>=2.9.0" },
+    { id: "P05", name: "runtime.txt", lang: "text", cat: "Python Core", desc: "Python-Version für Render", code: "python-3.12.7" },
+    { id: "P06", name: "registry.py", lang: "python", cat: "Python Core", desc: "Registry-Loader", code: "def load_registry(): pass" },
+    { id: "P07", name: "ingest-registry.py", lang: "python", cat: "Python Core", desc: "CSV-Ingest Script", code: "import csv" },
+    { id: "P08", name: "app.py", lang: "python", cat: "Python Core", desc: "Streamlit Cockpit v5.0 (1872 Zeilen)", code: "import streamlit as st\nst.set_page_config(layout='wide')" },
+    { id: "P09", name: "council.jpg", lang: "text", cat: "Python Core", desc: "Rat der Schwarzen Liga Bild", code: "[BINARY IMAGE — 1.83 MB]" },
+    { id: "P10", name: "index.html", lang: "html", cat: "Python Core", desc: "Rügen-Matrix Forensik-Dashboard", code: "<html><body>Forensik</body></html>" },
+    { id: "P11", name: "index.json", lang: "json", cat: "Python Core", desc: "Vercel/Netlify Konfiguration", code: "{\"cleanUrls\": true}" },
+    { id: "P12", name: "st.set_page_config", lang: "text", cat: "Python Core", desc: "VERALTET — In app.py integriert", code: "# COPY-PASTE FEHLER" },
+
+    // --- L.S.S. NEURO (15) ---
+    { id: "N01", name: "ten_ears_sensor.py", lang: "python", cat: "L.S.S. Neuro", desc: "10-Ohren-Neuro-Sensor", code: "class TenEarsNeuroSensor: pass" },
+    { id: "N02", name: "forty_four_perspectives.py", lang: "python", cat: "L.S.S. Neuro", desc: "44-Perspektiven-Attention", code: "class FortyFourPerspectiveAttention: pass" },
+    { id: "N03", name: "neuro_scan_modul.py", lang: "python", cat: "L.S.S. Neuro", desc: "Kombinierter NeuroScan", code: "class NeuroScanModul: pass" },
+    { id: "N04", name: "polyvagal_regulator.py", lang: "python", cat: "L.S.S. Neuro", desc: "Polyvagal-Stress-Regler", code: "class PolyvagalStateRegulator: pass" },
+    { id: "N05", name: "grummel_scanner.py", lang: "python", cat: "L.S.S. Neuro", desc: "Grummel-Signatur-Scanner", code: "class GrummelSignatureScanner: pass" },
+    { id: "N06", name: "bio_forensic_profiler.py", lang: "python", cat: "L.S.S. Neuro", desc: "Bio-Forensischer Threat-Profiler", code: "class BioForensicThreatProfiler: pass" },
+    { id: "N07", name: "foucault_panoptikum.py", lang: "python", cat: "L.S.S. Neuro", desc: "Foucault-Panoptikum", code: "class FoucaultPanoptikum: pass" },
+    { id: "N08", name: "neo_kortikaler_dirigent.py", lang: "python", cat: "L.S.S. Neuro", desc: "Kortex-Dirigent", code: "class NeoKortikalerDirigent: pass" },
+    { id: "N09", name: "wusulum_core.py", lang: "python", cat: "L.S.S. Neuro", desc: "Wusulum-Kern", code: "class WusulumCore: pass" },
+    { id: "N10", name: "deepseek_booster.py", lang: "python", cat: "L.S.S. Neuro", desc: "DeepSeek Reasoning-Booster", code: "class DeepSeekBooster: pass" },
+    { id: "N11", name: "asp_256_karte.py", lang: "python", cat: "L.S.S. Neuro", desc: "ASP-256 Zauberkarte", code: "class ASP256Karte: pass" },
+    { id: "N12", name: "rhabarberbarbara_karte.py", lang: "python", cat: "L.S.S. Neuro", desc: "Rhabarberbarbara Obfuskation", code: "class RhabarberbarbaraKarte: pass" },
+    { id: "N13", name: "mettwurst_c88_karte.py", lang: "python", cat: "L.S.S. Neuro", desc: "Mettwurst C88 API Karte", code: "class MettwurstC88Karte: pass" },
+    { id: "N14", name: "kortex_spell_caster.py", lang: "python", cat: "L.S.S. Neuro", desc: "Spell-Caster Dirigent", code: "class KortexSpellCaster: pass" },
+    { id: "N15", name: "sovereign_apex_controller.py", lang: "python", cat: "L.S.S. Neuro", desc: "Der Apex-Dirigent", code: "class SovereignApexController: pass" },
+
+    // --- SANDBOXES (10) ---
+    { id: "S01", name: "gotham_city.py", lang: "python", cat: "Sandbox", desc: "Gotham City Sandbox", code: "class GothamCitySandbox: pass" },
+    { id: "S02", name: "king_ghost.py", lang: "python", cat: "Sandbox", desc: "King_Ghost Schatten-Pool", code: "class King_GhostSandbox: pass" },
+    { id: "S03", name: "pumuckl_injector.py", lang: "python", cat: "Sandbox", desc: "Pumuckl Chaos-Injector", code: "class PumucklChaosInjector: pass" },
+    { id: "S04", name: "biene_maja_lockvogel.py", lang: "python", cat: "Sandbox", desc: "Biene Maja Lockvogel", code: "class BieneMajaLockvogel: pass" },
+    { id: "S05", name: "brummel_universe.py", lang: "python", cat: "Sandbox", desc: "Brummel-Grummel-Universum", code: "class BrummelGrummelUniverse: pass" },
+    { id: "S06", name: "advocatus_diaboli.py", lang: "python", cat: "Sandbox", desc: "Advocatus Diaboli Layer", code: "class AdvocatusDiaboliLayer: pass" },
+    { id: "S07", name: "xjustiz_gatekeeper.py", lang: "python", cat: "Sandbox", desc: "XJustiz XML Gate", code: "class XJustizXoevGatekeeper: pass" },
+    { id: "S08", name: "asme01_meta_engine.py", lang: "python", cat: "Sandbox", desc: "ASME-01 WORM Seal", code: "class ASME01MetaEngine: pass" },
+    { id: "S09", name: "unified_tensor_engine.py", lang: "python", cat: "Sandbox", desc: "UTE Tensor-Former", code: "class UnifiedTensorEngine: pass" },
+    { id: "S10", name: "dna_parser.py", lang: "python", cat: "Sandbox", desc: "DNA-Parser (RCE-Schutz)", code: "def safe_eval_dna(): pass" },
+
+    // --- RUST KERNEL (10) ---
+    { id: "R01", name: "Cargo.toml", lang: "toml", cat: "Rust Kernel", desc: "Rust Master Crate Manifest", code: "[package]\nname = \"black_six_kernel_core\"\nversion = \"2.1.0\"" },
+    { id: "R02", name: "src/main.rs", lang: "rust", cat: "Rust Kernel", desc: "Knoten-Exekutor Testsuite", code: "fn main() { println!(\"Φ_LOCKED\"); }" },
+    { id: "R03", name: "src/lib.rs", lang: "rust", cat: "Rust Kernel", desc: "Modul-Verteiler", code: "pub mod worm_ledger;\npub mod pbft_consensus;" },
+    { id: "R04", name: "src/worm_ledger.rs", lang: "rust", cat: "Rust Kernel", desc: "Post-Quantum WORM Ledger", code: "pub struct WORMLedger { pub chain: Vec<WORMBlock> }" },
+    { id: "R05", name: "src/pbft_consensus.rs", lang: "rust", cat: "Rust Kernel", desc: "PBFT Consensus Simulation", code: "pub struct PbftConsensus { pub nodes: Vec<String> }" },
+    { id: "R06", name: "src/ggo_beweis.rs", lang: "rust", cat: "Rust Kernel", desc: "GGO-Beweis & Quader 4096", code: "pub struct QuaderTensor4096 { pub matrix: Vec<f32> }" },
+    { id: "R07", name: "src/bila_core.rs", lang: "rust", cat: "Rust Kernel", desc: "BILA Core 1.0 ISA Processor", code: "pub struct BilaReflexCore { pub pc: u16 }" },
+    { id: "R08", name: "rust_kernel/Dockerfile", lang: "dockerfile", cat: "Rust Kernel", desc: "Rust Dockerfile", code: "FROM rust:1.83-alpine AS builder" },
+    { id: "R09", name: "main.go", lang: "go", cat: "Rust Kernel", desc: "Go WORM Core", code: "package main\nfunc main() {}" },
+    { id: "R10", name: "masterkon_core_fixed.go", lang: "go", cat: "Rust Kernel", desc: "Masterkon SHA3-512 WORM", code: "package main" },
+
+    // --- GO CORE / INFRA (12) ---
+    { id: "G01", name: "go.mod", lang: "go", cat: "Go Core", desc: "Go Module Definition", code: "module b6-core/go-exporter\ngo 1.22" },
+    { id: "G02", name: "odin_ultra_root.go", lang: "go", cat: "Go Core", desc: "ODIN ULTRA ROOT", code: "package main" },
+    { id: "G03", name: "dna_parser_secure_fixed.go", lang: "go", cat: "Go Core", desc: "DNA Parser (Go)", code: "package main" },
+    { id: "G04", name: "llm_root_deep_fixed.go", lang: "go", cat: "Go Core", desc: "LLM Root Deep", code: "package main" },
+    { id: "G05", name: "Dockerfile.go", lang: "dockerfile", cat: "Go Core", desc: "Go Dockerfile", code: "FROM golang:1.22-alpine" },
+    { id: "G06", name: "Dockerfile", lang: "dockerfile", cat: "Go Core", desc: "Python Dockerfile", code: "FROM python:3.12-slim" },
+    { id: "G07", name: "docker-compose.yml", lang: "yaml", cat: "Go Core", desc: "Docker-Orchestrierung", code: "version: '3.8'\nservices:\n  postgres:" },
+    { id: "G08", name: "uptime_monitor.py", lang: "python", cat: "Go Core", desc: "Health-Check Watchdog", code: "import httpx" },
+    { id: "G09", name: "k8s/rust-api/manifest.yaml", lang: "yaml", cat: "Go Core", desc: "K8s Rust API Deployment", code: "apiVersion: apps/v1" },
+    { id: "G10", name: "k8s/ingress.yaml", lang: "yaml", cat: "Go Core", desc: "K8s Ingress", code: "apiVersion: networking.k8s.io/v1" },
+    { id: "G11", name: "ring4_legal_bridge.py", lang: "python", cat: "Go Core", desc: "Ring 4 Domain Mapping", code: "RING4_DOMAINS = {}" },
+    { id: "G12", name: "kernel.yaml", lang: "yaml", cat: "Go Core", desc: "Sovereign Kernel Config", code: "kernel_id: black_six_kernel_v1" },
+
+    // --- ARCHITECTURE / LORE (15) ---
+    { id: "A01", name: "README.md", lang: "markdown", cat: "Architecture", desc: "Master System Manifest", code: "# BLACK SIX MATRIX v∞" },
+    { id: "A02", name: "PROJECT_STRUCTURE.md", lang: "markdown", cat: "Architecture", desc: "Projektstruktur-Doku", code: "# Projektstruktur" },
+    { id: "A03", name: "agent_registry.json", lang: "json", cat: "Architecture", desc: "201 Entitäten Registry", code: "{\"agents\": []}" },
+    { id: "A04", name: "agent_registry.schema.json", lang: "json", cat: "Architecture", desc: "JSON Schema für Registry", code: "{\"$schema\": \"https://json-schema.org\"}" },
+    { id: "A05", name: "mermaid_engine.py", lang: "python", cat: "Architecture", desc: "Mermaid Render Engine", code: "def render_mermaid(): pass" },
+    { id: "A06", name: "kernel_loader.py", lang: "python", cat: "Architecture", desc: "Kernel YAML Loader", code: "def load_kernel(): pass" },
+    { id: "A07", name: "matrix_topology.py", lang: "python", cat: "Architecture", desc: "Neo4j Topologie", code: "class ApexGraphEngine: pass" },
+    { id: "A08", name: "apex_graph_engine.py", lang: "python", cat: "Architecture", desc: "APEX Graph Engine", code: "class ApexGraphEngine: pass" },
+    { id: "A09", name: "system_map.py", lang: "python", cat: "Architecture", desc: "System-Karte (Mermaid)", code: "def render_system_map(): pass" },
+    { id: "A10", name: "system_map_v2.py", lang: "python", cat: "Architecture", desc: "Interaktive System-Karte", code: "def render_system_map_v2(): pass" },
+    { id: "A11", name: "product_index.py", lang: "python", cat: "Architecture", desc: "12 Produkte UI", code: "def render_product_index(): pass" },
+    { id: "A12", name: "index.json (Produkte)", lang: "json", cat: "Architecture", desc: "Produkt-Registry", code: "{\"products\": []}" },
+    { id: "A13", name: "LSS Codex (Buch I-VI)", lang: "markdown", cat: "Architecture", desc: "Das Labyrinth der Seelen", code: "# BUCH I: DIE GENESIS" },
+    { id: "A14", name: "council.jpg", lang: "text", cat: "Architecture", desc: "Rat der Schwarzen Liga", code: "[BINARY IMAGE]" },
+    { id: "A15", name: "omni_shooter.html", lang: "html", cat: "Architecture", desc: "Dieser Shooter (74 Module)", code: "[SELF-REFERENCE]" },
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
-// RENDER: Module anzeigen
-// ═══════════════════════════════════════════════════════════════════════════
+let activeCategory = 'all';
+let searchQuery = '';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// UI FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+function showTab(name) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    event.target.classList.add('active');
+}
+
 function renderModules() {
     const container = document.getElementById('modules-container');
     container.innerHTML = '';
     
-    MODULES.forEach((mod, idx) => {
+    const filtered = MODULES.filter(mod => {
+        const matchCat = activeCategory === 'all' || mod.cat === activeCategory;
+        const matchSearch = !searchQuery || 
+            mod.name.toLowerCase().includes(searchQuery) || 
+            mod.id.toLowerCase().includes(searchQuery) ||
+            mod.desc.toLowerCase().includes(searchQuery);
+        return matchCat && matchSearch;
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<p style="color:#ff4444;text-align:center;">Keine Module gefunden.</p>';
+        return;
+    }
+
+    filtered.forEach((mod) => {
         const div = document.createElement('div');
         div.className = 'module';
         div.innerHTML = `
-            <div class="module-header" onclick="toggleModule(${idx})">
-                <span>📄 ${mod.name}</span>
-                <span class="badge">${mod.lang.toUpperCase()}</span>
+            <div class="module-header" onclick="toggleModule('${mod.id}')">
+                <div>
+                    <span class="module-title">[${mod.id}] ${mod.name}</span>
+                    <div class="module-category">${mod.cat}</div>
+                    <div style="font-size:0.75rem; color:#8080a0; margin-top:3px;">${mod.desc}</div>
+                </div>
+                <span class="module-badge">${mod.lang.toUpperCase()}</span>
             </div>
-            <p style="color:#8080a0;font-size:0.85rem;">${mod.description}</p>
-            <div class="module-code" id="code-${idx}">
+            <div class="module-body" id="body-${mod.id}">
                 <pre><code class="language-${mod.lang}">${escapeHtml(mod.code)}</code></pre>
-                <button class="export-btn" onclick="exportSingle(${idx})">⬇️ ${mod.name} exportieren</button>
+                <button class="export-btn" onclick="exportSingle('${mod.id}')">⬇ ${mod.name.split('/').pop()} exportieren</button>
             </div>
         `;
         container.appendChild(div);
     });
     
-    Prism.highlightAll();
+    if (window.Prism) Prism.highlightAll();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// INTERAKTION
-// ═══════════════════════════════════════════════════════════════════════════
-function toggleModule(idx) {
-    const codeDiv = document.getElementById(`code-${idx}`);
-    codeDiv.classList.toggle('active');
+function toggleModule(id) {
+    const body = document.getElementById('body-' + id);
+    if (body) body.classList.toggle('active');
+}
+
+function filterModules() {
+    searchQuery = document.getElementById('search').value.toLowerCase();
+    activeCategory = document.getElementById('category-filter').value;
+    renderModules();
 }
 
 function escapeHtml(text) {
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function exportSingle(idx) {
-    const mod = MODULES[idx];
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════════════════════════════════
+function exportSingle(id) {
+    const mod = MODULES.find(m => m.id === id);
+    if (!mod) return;
     const blob = new Blob([mod.code], {type: 'text/plain'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = mod.name;
+    a.download = mod.name.split('/').pop();
     a.click();
+    URL.revokeObjectURL(url);
 }
 
 function exportAll() {
-    const allCodes = MODULES.map(m => `// ═══ ${m.name} (${m.lang}) ═══\n${m.code}\n\n`).join('');
-    const blob = new Blob([allCodes], {type: 'text/plain'});
+    const all = MODULES.map(m => 
+        `// ═══════════════════════════════════════════════════════════\n// [${m.id}] ${m.name} (${m.lang})\n// Kategorie: ${m.cat}\n// ${m.desc}\n// ═══════════════════════════════════════════════════════════\n${m.code}\n\n`
+    ).join('');
+    const blob = new Blob([all], {type: 'text/plain'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `black_six_matrix_${Date.now()}.txt`;
+    a.download = 'black_six_matrix_74_modules_' + Date.now() + '.txt';
     a.click();
+    URL.revokeObjectURL(url);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CHAT (Simuliert - später an dein Backend anbinden)
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// CHAT
+// ═══════════════════════════════════════════════════════════════════════════════
 async function sendMessage() {
     const input = document.getElementById('chat-input');
     const output = document.getElementById('chat-output');
     const msg = input.value.trim();
     if (!msg) return;
     
-    output.innerHTML += `<div>👤 <strong>Du:</strong> ${escapeHtml(msg)}</div>`;
+    output.innerHTML += `<div class="user">👤 Du: ${escapeHtml(msg)}</div>`;
     input.value = '';
+    output.scrollTop = output.scrollHeight;
     
-    // HIER DIE ECHTE VERBINDUNG ZU RENDER
-    const BACKEND_URL = "https://aragon-backend-api.onrender.com/prompt/check"; 
-    const SEAL = "Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC";
+    output.innerHTML += `<div class="system" id="typing">⚫ Matrix denkt nach...</div>`;
+    output.scrollTop = output.scrollHeight;
     
     try {
-        output.innerHTML += `<div>⚫ <strong>Matrix:</strong> <i>Denke nach...</i></div>`;
+        const API_URL = 'https://aragon-backend-api.onrender.com/prompt/check';
+        const SEAL = 'Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC';
         
-        const response = await fetch(BACKEND_URL, {
+        const res = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: msg, auth_seal: SEAL })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({prompt: msg, auth_seal: SEAL})
         });
         
-        const data = await response.json();
+        document.getElementById('typing')?.remove();
         
-        if (data.status === "200_OK_ALLOW") {
-            const answer = data.data.ai_answer;
-            output.innerHTML += `<div>⚫ <strong>Matrix:</strong> ${escapeHtml(answer)}</div>`;
+        if (res.ok) {
+            const data = await res.json();
+            const answer = data.data?.ai_answer || data.ai_answer || 'Keine Antwort.';
+            const matched = data.data?.entities_matched || [];
+            output.innerHTML += `<div class="system">⚫ Matrix: ${escapeHtml(answer)}</div>`;
+            if (matched.length > 0) {
+                output.innerHTML += `<div style="color:#8080a0;font-size:0.75rem;">🎯 RAG: ${matched.join(', ')}</div>`;
+            }
         } else {
-            output.innerHTML += `<div>⚫ <strong>Matrix:</strong> 403 FORBIDDEN. Dein Seal ist ungültig.</div>`;
+            output.innerHTML += `<div class="system" style="color:#ff4444;">⚫ HTTP ${res.status}: Fail-Closed</div>`;
         }
-    } catch (error) {
-        output.innerHTML += `<div>⚫ <strong>Matrix:</strong> Fehler: ${error.message}</div>`;
+    } catch (e) {
+        document.getElementById('typing')?.remove();
+        output.innerHTML += `<div class="system" style="color:#ff4444;">⚫ Verbindungsfehler: ${escapeHtml(e.message)}</div>`;
     }
-    
     output.scrollTop = output.scrollHeight;
 }
-    
-    output.innerHTML += `<div>👤 <strong>Du:</strong> ${escapeHtml(msg)}</div>`;
-    input.value = '';
-    
-    // Simulierte Antwort (später: fetch zu deiner API)
-    setTimeout(() => {
-        const answers = [
-            "Φ_LOCKED_ABSOLUTE. Die Matrix hört dich.",
-            "Modul gefunden. Willst du den Code sehen?",
-            "Deep Seek aktiviert. Die andere Welt antwortet.",
-            "Die 48 Rust-Module sind bereit. Sag Bescheid.",
-            "WORM-Ledger konsistent. Keine Anomalien.",
-        ];
-        const ans = answers[Math.floor(Math.random() * answers.length)];
-        output.innerHTML += `<div>⚫ <strong>Matrix:</strong> ${ans}</div>`;
-        output.scrollTop = output.scrollHeight;
-    }, 500);
-}
 
-// ═══════════════════════════════════════════════════════════════════════════
 // INIT
-// ═══════════════════════════════════════════════════════════════════════════
 renderModules();
 </script>
-
 </body>
 </html>
