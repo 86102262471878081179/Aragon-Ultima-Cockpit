@@ -448,35 +448,24 @@ st.sidebar.caption(f"Chronik: {len(st.session_state.chronik)} Einträge")
 st.sidebar.caption(f"Feindregister: {len(st.session_state.feinde)} Ziele")
 st.sidebar.caption(f"Metriken: {len(st.session_state.metric_history)} Samples")
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ABSCHNITT 9: PANEL — OMNI-SHOOTER
-# ─────────────────────────────────────────────────────────────────────────────
+# ============================================================
+# PANEL: OMNI-SHOOTER
+# ============================================================
 if nav == "🏴‍☠️ Omni-Shooter":
     st.markdown('<div class="main-header">🏴‍☠️ BLACK SIX OMNI-SHOOTER</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">Code-Archiv · Chat · Export</div>', unsafe_allow_html=True)
-
-    html_path = Path(__file__).parent / "frontend" / "omni_shooter.html"
-
+    st.markdown('<div class="sub-header">Code-Archiv · Chat · Export · 74 Module</div>', unsafe_allow_html=True)
+    
+    # WICHTIG: "Frontend" mit großem F (wegen deines Ordners auf GitHub)
+    html_path = Path(__file__).parent / "Frontend" / "omni_shooter.html"
+    
     if html_path.exists():
         with open(html_path, "r", encoding="utf-8") as f:
             html_content = f.read()
         components.html(html_content, height=900, scrolling=True)
     else:
-        st.warning("⚠️ Omni-Shooter HTML-Datei nicht gefunden.")
-        st.info("Erstelle `frontend/omni_shooter.html` im Repo, um den vollen Shooter zu sehen.")
-
-        st.subheader("💬 Omni-Chat (Fallback-Modus)")
-        for msg in st.session_state.messages:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
-
-        if prompt := st.chat_input("Frage an die Matrix..."):
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            with st.chat_message("assistant"):
-                st.markdown("⚫ Φ_LOCKED_ABSOLUTE. (Simulierte Antwort im Fallback-Modus)")
-
+        st.error(f"🚨 Datei nicht gefunden: {html_path}")
+        st.info("Bitte stelle sicher, dass die Datei im Ordner 'Frontend' liegt und exakt 'omni_shooter.html' heißt.")
+        
 # ─────────────────────────────────────────────────────────────────────────────
 # ABSCHNITT 10: PANEL — RAT DER SCHWARZEN LIGA
 # ─────────────────────────────────────────────────────────────────────────────
