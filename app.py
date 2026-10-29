@@ -454,17 +454,50 @@ st.sidebar.caption(f"Metriken: {len(st.session_state.metric_history)} Samples")
 if nav == "🏴‍☠️ Omni-Shooter":
     st.markdown('<div class="main-header">🏴‍☠️ BLACK SIX OMNI-SHOOTER</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Code-Archiv · Chat · Export · 74 Module</div>', unsafe_allow_html=True)
+
+    # Mögliche Pfade, wo die Datei liegen könnte
+    base = Path(__file__).parent
+    kandidaten = [
+        base / "Frontend" / "omni_shooter.html",
+        base / "frontend" / "omni_shooter.html",
+        base / "Frontend" / "omni_shooter.html.",   # Mit Punkt am Ende
+        base / "omni_shooter.html",                  # Direkt im Root
+        base / "Frontend" / "omni_shooter.html.html",
+    ]
     
-    # WICHTIG: "Frontend" mit großem F (wegen deines Ordners auf GitHub)
-    html_path = Path(__file__).parent / "Frontend" / "omni_shooter.html"
-    
-    if html_path.exists():
+    html_path = None
+    for k in kandidaten:
+        if k.exists():
+            html_path = k
+            break
+
+    if html_path is not None:
         with open(html_path, "r", encoding="utf-8") as f:
             html_content = f.read()
+        st.success(f"✅ Datei geladen: {html_path.name}")
         components.html(html_content, height=900, scrolling=True)
     else:
-        st.error(f"🚨 Datei nicht gefunden: {html_path}")
-        st.info("Bitte stelle sicher, dass die Datei im Ordner 'Frontend' liegt und exakt 'omni_shooter.html' heißt.")
+        # DEBUG: Zeige alle Dateien im Frontend-Ordner
+        st.error("🚨 Datei nicht gefunden. Debug-Info:")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write("**Was ich gesucht habe:**")
+            for k in kandidaten:
+                st.code(str(k), language="text")
+        
+        with col2:
+            st.write("**Was wirklich im Frontend-Ordner liegt:**")
+            for check_dir in [base / "Frontend", base / "frontend", base]:
+                if check_dir.exists():
+                    st.write(f"📁 `{check_dir.name}`:")
+                    try:
+                        files = os.listdir(check_dir)
+                        for f in sorted(files)[:20]:
+                            st.code(f, language="text")
+                    except Exception as e:
+                        st.write(f"Fehler: {e}")
+                    st.divider()
         
 # ─────────────────────────────────────────────────────────────────────────────
 # ABSCHNITT 10: PANEL — RAT DER SCHWARZEN LIGA
