@@ -446,12 +446,11 @@ elif nav == "🏴‍☠️ Omni-Shooter":
         # Rendert das HTML in einem Iframe
         components.html(html_content, height=900, scrolling=True)
     else:
-        st.error("Omni-Shooter HTML-Datei nicht gefunden.")
-            
-    else:
-        st.warning("**WARNUNG**: Der Kill-Switch isoliert alle Ingress-Pfade sofort.")
-        confirm = st.checkbox("Ich bestätige die Aktivierung.")
-        if st.button("🚨 KILL-SWITCH AKTIVIEREN", type="primary", disabled=not confirm):
-            st.session_state.kill_switch_active = True
-            log_event("KILL", "KILL-SWITCH aktiviert")
+elif nav == "🚨 Notfall-Kill-Switch":
+    if st.session_state.kill_switch_active:
+        st.error("🚨 SYSTEM ISOLIERT 🚨")
+        if st.button("🔓 System reaktivieren", type="primary"):
+            st.session_state.kill_switch_active = False
+            log_event("KILL", "Kill-Switch deaktiviert")
             st.rerun()
+    else:
