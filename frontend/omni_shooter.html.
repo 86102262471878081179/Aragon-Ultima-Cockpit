@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>⚫ BLACK SIX OMNI-SHOOTER</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.css">
+    <style>
+        body { background: #03050a; color: #d0d0e0; font-family: 'JetBrains Mono', monospace; margin: 0; padding: 20px; }
+        .header { text-align: center; color: #00e5ff; text-shadow: 0 0 15px #00e5ff; margin-bottom: 20px; }
+        .module { background: #0a122a; border: 1px solid #1f2933; border-radius: 8px; margin: 10px 0; padding: 15px; }
+        .module-header { display: flex; justify-content: space-between; color: #b800ff; font-weight: bold; cursor: pointer; }
+        .module-code { display: none; margin-top: 10px; background: #000; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .module-code.active { display: block; }
+        .badge { background: #141d28; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; color: #00e5ff; }
+        .export-btn { background: #00e5ff; color: #000; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        .chat-box { background: #0a122a; border: 1px solid #00e5ff; border-radius: 8px; padding: 15px; margin-top: 30px; }
+        #chat-output { background: #000; padding: 10px; min-height: 100px; max-height: 300px; overflow-y: auto; border-radius: 4px; margin-bottom: 10px; }
+        #chat-input { width: 100%; padding: 10px; background: #141d28; color: #00e5ff; border: 1px solid #333; border-radius: 4px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🏴‍☠️ BLACK SIX OMNI-SHOOTER</h1>
+    <p>Φ_LOCKED_ABSOLUTE | SEAL: 850b2ef0...</p>
+</div>
+
+<div id="modules-container"></div>
+
+<div class="chat-box">
+    <h2>💬 OMNI-CHAT (Deep Seek · Die Andere Welt)</h2>
+    <div id="chat-output">⚡ Black Six Omni-Shooter geladen. Frage mich nach Modulen oder der Matrix.</div>
+    <input type="text" id="chat-input" placeholder="Frage an das System..." onkeypress="if(event.key==='Enter') sendMessage()">
+    <button class="export-btn" onclick="exportAll()">📦 Alle Codes exportieren</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-rust.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-go.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-yaml.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// MODUL-REGISTRY (Hier baust du deine 74 Module ein)
+// ═══════════════════════════════════════════════════════════════════════════
+const MODULES = [
+    {
+        id: "main_py",
+        name: "main.py",
+        lang: "python",
+        description: "Monster-API (1374 Zeilen) - FastAPI Backend",
+        code: `# main.py - B6 MONSTER API
+# Hier den vollen Code einfügen...
+def hello():
+    return "Φ_LOCKED_ABSOLUTE"`
+    },
+    {
+        id: "app_py",
+        name: "app.py",
+        lang: "python",
+        description: "Streamlit Cockpit (24 Panels)",
+        code: `# app.py - Sovereign Cockpit
+import streamlit as st
+st.title("BLACK SIX MATRIX")`
+    },
+    {
+        id: "main_go",
+        name: "main.go",
+        lang: "go",
+        description: "Go-Core WORM-Ledger",
+        code: `// main.go - B6 CORE
+package main
+func main() { println("Φ_LOCKED") }`
+    },
+    // Hier baust du alle 74 Module ein (Rust, Go, Python, YAML)
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER: Module anzeigen
+// ═══════════════════════════════════════════════════════════════════════════
+function renderModules() {
+    const container = document.getElementById('modules-container');
+    container.innerHTML = '';
+    
+    MODULES.forEach((mod, idx) => {
+        const div = document.createElement('div');
+        div.className = 'module';
+        div.innerHTML = `
+            <div class="module-header" onclick="toggleModule(${idx})">
+                <span>📄 ${mod.name}</span>
+                <span class="badge">${mod.lang.toUpperCase()}</span>
+            </div>
+            <p style="color:#8080a0;font-size:0.85rem;">${mod.description}</p>
+            <div class="module-code" id="code-${idx}">
+                <pre><code class="language-${mod.lang}">${escapeHtml(mod.code)}</code></pre>
+                <button class="export-btn" onclick="exportSingle(${idx})">⬇️ ${mod.name} exportieren</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+    
+    Prism.highlightAll();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INTERAKTION
+// ═══════════════════════════════════════════════════════════════════════════
+function toggleModule(idx) {
+    const codeDiv = document.getElementById(`code-${idx}`);
+    codeDiv.classList.toggle('active');
+}
+
+function escapeHtml(text) {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function exportSingle(idx) {
+    const mod = MODULES[idx];
+    const blob = new Blob([mod.code], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = mod.name;
+    a.click();
+}
+
+function exportAll() {
+    const allCodes = MODULES.map(m => `// ═══ ${m.name} (${m.lang}) ═══\n${m.code}\n\n`).join('');
+    const blob = new Blob([allCodes], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `black_six_matrix_${Date.now()}.txt`;
+    a.click();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CHAT (Simuliert - später an dein Backend anbinden)
+// ═══════════════════════════════════════════════════════════════════════════
+async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const output = document.getElementById('chat-output');
+    const msg = input.value.trim();
+    if (!msg) return;
+    
+    output.innerHTML += `<div>👤 <strong>Du:</strong> ${escapeHtml(msg)}</div>`;
+    input.value = '';
+    
+    // HIER DIE ECHTE VERBINDUNG ZU RENDER
+    const BACKEND_URL = "https://aragon-backend-api.onrender.com/prompt/check"; 
+    const SEAL = "Φ_SOVEREIGN_ROOT_SEAL_EX_TUNC";
+    
+    try {
+        output.innerHTML += `<div>⚫ <strong>Matrix:</strong> <i>Denke nach...</i></div>`;
+        
+        const response = await fetch(BACKEND_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: msg, auth_seal: SEAL })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === "200_OK_ALLOW") {
+            const answer = data.data.ai_answer;
+            output.innerHTML += `<div>⚫ <strong>Matrix:</strong> ${escapeHtml(answer)}</div>`;
+        } else {
+            output.innerHTML += `<div>⚫ <strong>Matrix:</strong> 403 FORBIDDEN. Dein Seal ist ungültig.</div>`;
+        }
+    } catch (error) {
+        output.innerHTML += `<div>⚫ <strong>Matrix:</strong> Fehler: ${error.message}</div>`;
+    }
+    
+    output.scrollTop = output.scrollHeight;
+}
+    
+    output.innerHTML += `<div>👤 <strong>Du:</strong> ${escapeHtml(msg)}</div>`;
+    input.value = '';
+    
+    // Simulierte Antwort (später: fetch zu deiner API)
+    setTimeout(() => {
+        const answers = [
+            "Φ_LOCKED_ABSOLUTE. Die Matrix hört dich.",
+            "Modul gefunden. Willst du den Code sehen?",
+            "Deep Seek aktiviert. Die andere Welt antwortet.",
+            "Die 48 Rust-Module sind bereit. Sag Bescheid.",
+            "WORM-Ledger konsistent. Keine Anomalien.",
+        ];
+        const ans = answers[Math.floor(Math.random() * answers.length)];
+        output.innerHTML += `<div>⚫ <strong>Matrix:</strong> ${ans}</div>`;
+        output.scrollTop = output.scrollHeight;
+    }, 500);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════
+renderModules();
+</script>
+
+</body>
+</html>
