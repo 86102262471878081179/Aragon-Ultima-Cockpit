@@ -1227,8 +1227,14 @@ elif nav == "👻 King_Ghost Vault":
 # ABSCHNITT 22: PANEL — DEEPSEEK BOOSTER
 # ─────────────────────────────────────────────────────────────────────────────
 elif nav == "🧠 DeepSeek Booster":
-    st.markdown('<div class="main-header">🧠 DEEPSEEK BOOSTER 🧠</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">Multi-Step Reasoning · Chain-of-Thought · Confidence Scoring</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="main-header">🧠 DEEPSEEK BOOSTER 🧠</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="sub-header">Multi-Step Reasoning · Cache-aware API</div>',
+        unsafe_allow_html=True,
+    )
 
     col1, col2 = st.columns([2, 1])
 
@@ -1237,49 +1243,176 @@ elif nav == "🧠 DeepSeek Booster":
             "Problem / Prompt",
             "Ist § 839 BGB auf KI-Systeme anwendbar?",
             height=150,
-            key="deepseek_prompt"
+            key="deepseek_prompt",
         )
-        context = st.text_input("Zusätzlicher Kontext (optional)", "", key="deepseek_context")
+        context = st.text_area(
+            "Zusätzlicher Kontext (optional)",
+            "",
+            height=100,
+            key="deepseek_context",
+        )
+        system_prompt = st.text_area(
+            "System-Prompt (optional)",
+            "",
+            height=100,
+            key="deepseek_system_prompt",
+        )
 
     with col2:
-        depth = st.slider("Reasoning-Tiefe", min_value=1, max_value=5, value=3, key="deepseek_depth")
-        st.info("Tiefe 3 = Standard. Tiefe 5 = maximale Verifikation.")
+        depth = st.slider(
+            "Reasoning-Tiefe",
+            min_value=1,
+            max_value=5,
+            value=3,
+            key="deepseek_depth",
+        )
+        language = st.selectbox(
+            "Antwortsprache",
+            ["de", "en"],
+            key="deepseek_language",
+        )
+        model = st.text_input(
+            "Modell",
+            value="deepseek-chat",
+            key="deepseek_model",
+        )
+        max_tokens = st.number_input(
+            "Max. Tokens (0 = Backend-Standard)",
+            min_value=0,
+            max_value=64000,
+            value=0,
+            step=256,
+            key="deepseek_max_tokens",
+        )
+        response_format_text = st.text_area(
+            "Response-Format als JSON (optional)",
+            placeholder='{"type": "json_object"}',
+            height=80,
+            key="deepseek_response_format",
+        )
 
-    if st.button("⚡ Boost starten", type="primary", use_container_width=True, key="deepseek_run"):
-        with st.spinner("DeepSeek Reasoning läuft..."):
-            try:
-                r = httpx.post(
-                    f"{st.session_state.backend_url}/api/v1/deepseek/boost",
-                    json={
-                        "prompt": prompt,
-                        "context": context,
-                        "depth": depth,
-                        "auth_seal": st.session_state.auth_seal
-                    },
-                    timeout=30.0,
-                )
-                if r.status_code == 200:
-                    data = r.json()
+    if st.button(
+        "⚡ Boost starten",
+        type="primary",
+        use_container_width=True,
+        key="deepseek_run",
+    ):
+        if not prompt.strip():
+            st.warning("Bitte zuerst einen Prompt eingeben.")
+        else:
+            payload = {
+                "prompt": prompt.strip(),
+                "context": context.strip(),
+                "depth": depth,
+                "language": language,
+                "model": model.strip(),
+                "system_prompt": system_prompt.strip(),
+                "auth_seal": st.session_state.auth_seal,
+            }
 
-                    cA, cB, cC = st.columns(3)
-                    cA.metric("Confidence", f"{data.get('confidence', 0) * 100:.1f}%")
-                    cB.metric("Verdict", data.get("verdict", "?"))
-                    cC.metric("Verification Hash", data.get("verification_hash", "")[:8])
+            if max_tokens > 0:
+                payload["max_tokens"] = int(max_tokens)
 
-                    st.divider()
-                    st.subheader("🧠 Reasoning-Trace")
+            if response_format_text.strip():
+                try:
+                    payload["response_format"] = json.loads(
+                        response_format_text
+                    )
+                except json.JSONDecodeError as exc:
+                    st.error(f"Response-Format ist kein gültiges JSON: {exc}")
+                    st.stop()
 
-                    for step in data.get("reasoning_trace", []):
-                        with st.expander(f"Step {step['step']}: {step['name'].upper()}"):
-                            st.write(f"**Note:** {step['note']}")
-                            st.code(f"Hash: {step['hash']}", language="text")
+            with st.spinner("DeepSeek-Backend wird abgefragt …"):
+                try:
+                    response = httpx.post(
+                        f"{st.session_state.backend_url}/api/v1/deepseek/boost",
+                        json=payload,
+                        timeout=90.0,
+                    )
 
-                    log_event("INGRESS", f"DeepSeek-Boost: {prompt[:40]}...")
-                else:
-                    st.error(f"API Error: {r.status_code}")
-            except Exception as e:
-                st.error(f"Verbindungsfehler: {e}")
+                    if response.status_code == 200:
+                        data = response.json()
 
+                        st.subheader("API-Antwort")
+
+                        # Unterstützt sowohl die bisherige Struktur
+                        # als auch eine einfache {"result": "..."}-Antwort.
+                        result = (
+                            data.get("result")
+                            or data.get("answer")
+                            or data.get("ai_answer")
+                        )
+
+                        if result:
+                            st.markdown(result)
+
+                        # Vorhandene strukturierte Felder nur anzeigen,
+                        # wenn das Backend sie tatsächlich zurückgibt.
+                        if "confidence" in data or "verdict" in data:
+                            c1, c2 = st.columns(2)
+
+                            if "confidence" in data:
+                                confidence = data["confidence"]
+                                if isinstance(confidence, (int, float)):
+                                    c1.metric(
+                                        "Confidence",
+                                        f"{confidence * 100:.1f}%"
+                                        if confidence <= 1
+                                        else f"{confidence:.1f}%",
+                                    )
+                                else:
+                                    c1.metric("Confidence", str(confidence))
+
+                            if "verdict" in data:
+                                c2.metric("Verdict", str(data["verdict"]))
+
+                        trace = data.get("reasoning_trace")
+                        if trace:
+                            st.subheader("Reasoning-Trace")
+                            for index, step in enumerate(trace, start=1):
+                                if isinstance(step, dict):
+                                    step_number = step.get("step", index)
+                                    step_name = step.get("name", "Schritt")
+                                    with st.expander(
+                                        f"Schritt {step_number}: {step_name}"
+                                    ):
+                                        st.json(step)
+                                else:
+                                    st.write(step)
+
+                        if "cache_hit" in data:
+                            st.caption(
+                                "Cache: Treffer"
+                                if data["cache_hit"]
+                                else "Cache: neuer API-Aufruf"
+                            )
+
+                        st.session_state.deepseek_last_response = data
+
+                        with st.expander("Vollständige Backend-Antwort"):
+                            st.json(data)
+
+                        log_event(
+                            "INGRESS",
+                            f"DeepSeek-Boost: {prompt[:40]}...",
+                        )
+
+                    else:
+                        st.error(
+                            f"DeepSeek-API: HTTP {response.status_code}"
+                        )
+                        try:
+                            st.json(response.json())
+                        except ValueError:
+                            st.code(response.text[:4000])
+
+                except httpx.TimeoutException:
+                    st.error("Zeitüberschreitung beim DeepSeek-Backend.")
+                except httpx.HTTPError as exc:
+                    st.error(f"Verbindungsfehler: {exc}")
+                except ValueError as exc:
+                    st.error(f"Ungültige Antwort vom Backend: {exc}")
+                    
 # ─────────────────────────────────────────────────────────────────────────────
 # ABSCHNITT 23: PANEL — COUNCIL-VOTING
 # ─────────────────────────────────────────────────────────────────────────────
